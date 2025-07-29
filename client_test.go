@@ -211,10 +211,10 @@ func TestClient_GetNews(t *testing.T) {
 	mockResponse := map[string]interface{}{
 		"data": []map[string]interface{}{
 			{
-				"fecha":       "2023-12-01T10:00:00Z",
-				"titulo":      "Test News Title",
-				"descripcion": "Test news description",
-				"descarga":    "test-file.pdf",
+				"fecha":      "2023-12-01T10:00:00Z",
+				"emisor":     "Test News Title",
+				"referencia": "Test news description",
+				"descarga":   "test-file.pdf",
 			},
 		},
 	}
