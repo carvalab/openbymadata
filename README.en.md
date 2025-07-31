@@ -1,46 +1,44 @@
-# Librería OpenBYMAData para Go
+# OpenBYMAData Go Library
 
-Una librería completa en Go para acceder a datos financieros de la Bolsa de Comercio de Buenos Aires (BYMA - Bolsas y Mercados Argentinos) a través de su API pública gratuita.
+A comprehensive Go library for accessing financial data from the Buenos Aires Stock Exchange (BYMA - Bolsas y Mercados Argentinos) through their free public API.
 
-Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurrencia segura, caché incorporado y optimizaciones de rendimiento.
+Provides strongly-typed, concurrent-safe access to Argentine financial market data with built-in caching and performance optimizations.
 
-*[English version available here](README.en.md)*
+## Features
 
-## Características
+### 🚀 **Performance & Design**
+- **5-Minute Smart Caching**: Automatic caching reduces API calls by 95% and improves speed by 100-2000x
+- **Individual Ticker Lookups**: Get specific securities without fetching entire collections
+- **Batch Operations**: Efficiently retrieve multiple securities in a single operation
+- **Strongly Typed**: No more generic `interface{}` - proper structs for each financial instrument
+- **Concurrent Safe**: Safe for use across multiple goroutines with thread-safe caching
+- **Context Aware**: All methods accept `context.Context` for cancellation and timeouts
+- **Retry Logic**: Built-in exponential backoff for resilient API calls
+- **Comprehensive Error Handling**: Custom error types with retry logic
 
-### 🚀 **Rendimiento y Diseño**
-- **Caché Inteligente de 5 Minutos**: El almacenamiento en caché automático reduce las llamadas a la API en un 95% y mejora la velocidad entre 100 y 2000 veces
-- **Búsquedas Individuales de Tickers**: Obtené valores específicos sin necesidad de recuperar colecciones completas
-- **Operaciones por Lotes**: Recuperá múltiples valores de forma eficiente en una sola operación
-- **Tipado Fuerte**: No más `interface{}` genéricos - estructuras adecuadas para cada instrumento financiero
-- **Seguro para Concurrencia**: Seguro para usar en múltiples goroutines con caché thread-safe
-- **Compatible con Context**: Todos los métodos aceptan `context.Context` para cancelación y timeouts
-- **Lógica de Reintentos**: Retroceso exponencial incorporado para llamadas resilientes a la API
-- **Manejo Completo de Errores**: Tipos de errores personalizados con lógica de reintentos
+### 📊 **Market Data Coverage**
+- **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs  
+- **Fixed Income**: Government bonds, corporate bonds, short-term bonds (LEBACs)
+- **Derivatives**: Options contracts, futures
+- **Market Data**: Indices, market summary, working day status
+- **News & Financials**: Market news, income statements
 
-### 📊 **Cobertura de Datos del Mercado**
-- **Acciones**: Líderes (blue chips), Panel general (galpones), CEDEARs  
-- **Renta Fija**: Bonos gubernamentales, bonos corporativos, letras de corto plazo (LEBACs)
-- **Derivados**: Contratos de opciones, futuros
-- **Datos de Mercado**: Índices, resumen del mercado, estado de días hábiles
-- **Noticias y Financieros**: Noticias del mercado, estados de resultados
+> **Note**: "Securities" is a generic financial term in our Go code, but the actual BYMA API endpoints are: `leading-equity`, `general-equity`, and `cedears`
 
-> **Nota**: "Securities" es un término financiero genérico en nuestro código Go, pero los endpoints reales de la API de BYMA son: `leading-equity`, `general-equity`, y `cedears`
+### 🧪 **Testing & Reliability**
+- **Comprehensive Test Suite**: HTTP test servers for reliable testing
+- **Benchmarks**: Performance testing included
+- **Examples**: Extensive documentation with runnable examples
 
-### 🧪 **Pruebas y Confiabilidad**
-- **Suite de Pruebas Completa**: Servidores HTTP de prueba para testing confiable
-- **Benchmarks**: Incluye pruebas de rendimiento
-- **Ejemplos**: Documentación re completa con ejemplos ejecutables
-
-## Instalación
+## Installation
 
 ```bash
 go get github.com/pablocarvajal/openbymadata
 ```
 
-## Inicio Rápido
+## Quick Start
 
-### Búsquedas Individuales de Tickers (¡NUEVO!)
+### Individual Ticker Lookups (NEW!)
 
 ```go
 package main
@@ -54,39 +52,39 @@ import (
 )
 
 func main() {
-    // Crear cliente (caché de 5 minutos habilitado por defecto)
+    // Create client (5-minute caching enabled by default)
     client := openbymadata.NewClient()
     ctx := context.Background()
 
-    // Conseguir acción específica de EEUU (CEDEAR)
+    // Get specific US stock (CEDEAR)
     aapl, err := client.GetCedear(ctx, "AAPL")
     if err != nil {
         log.Fatal(err)
     }
     fmt.Printf("🍎 AAPL: $%.2f (%.2f%%)\n", aapl.Last, aapl.Change)
 
-    // Conseguir acción específica argentina
+    // Get specific Argentine stock
     ggal, err := client.GetBluechip(ctx, "GGAL")
     if err != nil {
         log.Fatal(err)
     }
     fmt.Printf("🏦 GGAL: $%.2f (%.2f%%)\n", ggal.Last, ggal.Change)
 
-    // Búsqueda universal (no necesitás conocer el tipo de valor)
+    // Universal search (don't need to know security type)
     security, err := client.GetSecurity(ctx, "BMA")
     if err != nil {
         log.Fatal(err)
     }
     fmt.Printf("🔍 BMA: $%.2f (%.2f%%)\n", security.Last, security.Change)
 
-    // Conseguir múltiples tickers eficientemente (usa los mismos datos en caché)
+    // Get multiple tickers efficiently (uses same cached data)
     watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
     securities, err := client.GetMultipleSecurities(ctx, watchlist)
     if err != nil {
         log.Fatal(err)
     }
     
-    fmt.Printf("\n💼 Portafolio (%d valores):\n", len(securities))
+    fmt.Printf("\n💼 Portfolio (%d securities):\n", len(securities))
     for symbol, security := range securities {
         fmt.Printf("  %s: $%.2f (%.2f%%)\n", 
             symbol, security.Last, security.Change)
@@ -94,55 +92,55 @@ func main() {
 }
 ```
 
-### Acceso Tradicional Basado en Colecciones
+### Traditional Collection-Based Access
 
 ```go
-// Conseguir todas las acciones líderes (en caché por 5 minutos)
+// Get all blue chip securities (cached for 5 minutes)
 bluechips, err := client.GetBluechips(ctx)
 if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("Encontradas %d acciones líderes:\n", len(bluechips))
-for _, security := range bluechips[:5] { // Mostrar las primeras 5
+fmt.Printf("Found %d blue chip securities:\n", len(bluechips))
+for _, security := range bluechips[:5] { // Show first 5
     fmt.Printf("  %s: $%.2f (%.2f%%)\n", 
         security.Symbol, security.Last, security.Change)
 }
 ```
 
-### Configuración Personalizada
+### Custom Configuration
 
 ```go
-// Crear cliente con opciones personalizadas
+// Create client with custom options
 opts := &openbymadata.ClientOptions{
     Timeout:       30 * time.Second,
     RetryAttempts: 5,
-    Logger:        customLogger, // Tu implementación de logger
+    Logger:        customLogger, // Your logger implementation
 }
 
 client := openbymadata.NewClient(opts)
 ```
 
-## Ejecutando Ejemplos
+## Running Examples
 
-La librería incluye ejemplos completos que demuestran todas las funcionalidades:
+The library includes comprehensive examples that demonstrate all features:
 
-### Correr la Demo Completa
+### Run the Complete Demo
 
 ```bash
-# Clonar el repositorio
+# Clone the repository
 git clone https://github.com/carvalab/openbymadata.git
 cd openbymadata
 
-# Correr el ejemplo completo (muestra todas las funcionalidades)
+# Run the complete example (shows all features)
 go run cmd/example/main.go
 
-# O compilar y ejecutar
+# Or build and run
 go build -o byma-demo cmd/example/main.go
 ./byma-demo
 ```
 
-### Ejemplo de Salida
+### Example Output
 
 ```
 🏛️  OpenBYMAData Go Library - Complete Example
@@ -218,116 +216,116 @@ Market Indices (15):
    • Thread-safe concurrent operations
 ```
 
-### Correr Pruebas de Ejemplo
+### Run Example Tests
 
 ```bash
-# Correr pruebas de ejemplo
+# Run example tests
 go test -v -run "Example"
 
-# Correr prueba de ejemplo específica
+# Run specific example test
 go test -v -run "ExampleClient"
 ```
 
-## Referencia de la API
+## API Reference
 
-### Búsquedas Individuales de Tickers (¡NUEVO! 🔥)
+### Individual Ticker Lookups (NEW! 🔥)
 
 ```go
-// Búsqueda universal (recomendada - busca en todos los tipos de valores)
-security, err := client.GetSecurity(ctx, "AAPL")    // Funciona para cualquier símbolo
+// Universal search (recommended - searches all security types)
+security, err := client.GetSecurity(ctx, "AAPL")    // Works for any symbol
 
-// Tipos específicos de valores
-aapl, err := client.GetCedear(ctx, "AAPL")          // Acciones de EEUU (CEDEARs)
-ggal, err := client.GetBluechip(ctx, "GGAL")        // Acciones líderes argentinas
-galpone, err := client.GetGalpone(ctx, "SYMBOL")    // Panel general
-bond, err := client.GetBond(ctx, "AL30")            // Todos los tipos de bonos
-option, err := client.GetOption(ctx, "GGAL123")     // Opciones
-future, err := client.GetFuture(ctx, "DOE25")       // Futuros
+// Specific security types
+aapl, err := client.GetCedear(ctx, "AAPL")          // US stocks (CEDEARs)
+ggal, err := client.GetBluechip(ctx, "GGAL")        // Argentine blue chips
+galpone, err := client.GetGalpone(ctx, "SYMBOL")    // General equity
+bond, err := client.GetBond(ctx, "AL30")            // All bond types
+option, err := client.GetOption(ctx, "GGAL123")     // Options
+future, err := client.GetFuture(ctx, "DOE25")       // Futures
 ```
 
-### Operaciones por Lotes (¡Eficiente! ⚡)
+### Batch Operations (Efficient! ⚡)
 
 ```go
-// Conseguir múltiples valores eficientemente (usa caché compartida)
+// Get multiple securities efficiently (uses shared cache)
 watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
 securities, err := client.GetMultipleSecurities(ctx, watchlist)
 
-// Buscar valores por símbolo parcial
-results, err := client.SearchSecurities(ctx, "APP")  // Encuentra símbolos que contienen "APP"
+// Search securities by partial symbol
+results, err := client.SearchSecurities(ctx, "APP")  // Finds symbols containing "APP"
 ```
 
-### Estado e Información del Mercado
+### Market Status & Info
 
 ```go
-// Chequear si el mercado está operando hoy
+// Check if market is working today
 isWorking, err := client.IsWorkingDay(ctx)
 
-// Conseguir índices del mercado (Merval, etc.)
+// Get market indices (Merval, etc.)
 indices, err := client.GetIndices(ctx)
 
-// Conseguir resumen del mercado
+// Get market summary/resume
 summary, err := client.MarketResume(ctx)
 ```
 
-### Acceso Basado en Colecciones (Endpoints de la API)
+### Collection-Based Access (API Endpoints)
 
 ```go
-// Todos los valores de un tipo específico (en caché por 5 minutos)
-bluechips, err := client.GetBluechips(ctx)  // → endpoint 'leading-equity'
-galpones, err := client.GetGalpones(ctx)    // → endpoint 'general-equity'  
-cedears, err := client.GetCedears(ctx)      // → endpoint 'cedears'
+// All securities of a specific type (cached for 5 minutes)
+bluechips, err := client.GetBluechips(ctx)  // → 'leading-equity' endpoint
+galpones, err := client.GetGalpones(ctx)    // → 'general-equity' endpoint  
+cedears, err := client.GetCedears(ctx)      // → 'cedears' endpoint
 ```
 
-### Renta Fija
+### Fixed Income
 
 ```go
-// Bonos gubernamentales
+// Government bonds
 bonds, err := client.GetBonds(ctx)
 
-// Letras de corto plazo (LEBACs)
+// Short-term bonds (LEBACs)
 shortTermBonds, err := client.GetShortTermBonds(ctx)
 
-// Bonos corporativos
+// Corporate bonds
 corporateBonds, err := client.GetCorporateBonds(ctx)
 ```
 
-### Derivados
+### Derivatives
 
 ```go
-// Contratos de opciones
+// Options contracts
 options, err := client.GetOptions(ctx)
 
-// Contratos de futuros
+// Futures contracts
 futures, err := client.GetFutures(ctx)
 ```
 
-### Noticias y Datos Financieros
+### News & Financial Data
 
 ```go
-// Noticias del mercado (en caché por 5 minutos)
+// Market news (cached for 5 minutes)
 news, err := client.GetNews(ctx)
 
-// Estados de resultados para un ticker específico (en caché por símbolo)
+// Income statements for a specific ticker (cached per symbol)
 statements, err := client.GetIncomeStatement(ctx, "GGAL")
 ```
 
-### Gestión de Caché (¡NUEVO! 💾)
+### Cache Management (NEW! 💾)
 
 ```go
-// Conseguir información de caché
+// Get cache information
 cacheInfo := client.GetCacheInfo()
-fmt.Printf("Estado del caché: %+v\n", cacheInfo)
+fmt.Printf("Cache status: %+v\n", cacheInfo)
 
-// Limpiar todos los datos en caché (fuerza llamadas frescas a la API)
+// Clear all cached data (forces fresh API calls)
 client.ClearCache()
 
-// Deshabilitar caché (no recomendado)
+// Disable caching (not recommended)
 client := openbymadata.NewClient(&openbymadata.ClientOptions{
     EnableCache: false,
 })
 ```
 
-## Modelos de Datos
+## Data Models
 
 ### Security
 ```go
@@ -373,22 +371,22 @@ type Option struct {
 
 ## Testing
 
-### Correr Tests
+### Running Tests
 
 ```bash
-# Correr todos los tests
+# Run all tests
 go test ./...
 
-# Correr tests con cobertura
+# Run tests with coverage
 go test -cover ./...
 
-# Correr benchmarks
+# Run benchmarks
 go test -bench=. ./...
 ```
 
-### Estructura de Tests
+### Test Structure
 
-La librería utiliza servidores HTTP de prueba para simular respuestas de la API:
+The library uses HTTP test servers to simulate API responses:
 
 ```go
 func TestMyBusinessLogic(t *testing.T) {
@@ -413,9 +411,9 @@ func TestMyBusinessLogic(t *testing.T) {
 }
 ```
 
-## Manejo de Errores
+## Error Handling
 
-La librería proporciona un manejo completo de errores con tipos de errores personalizados:
+The library provides comprehensive error handling with custom error types:
 
 ```go
 securities, err := client.GetBluechips(ctx)
@@ -437,25 +435,25 @@ if err != nil {
 }
 ```
 
-## Rendimiento y Caché
+## Performance & Caching
 
-### 🚀 Caché Inteligente de 5 Minutos (¡NUEVO!)
+### 🚀 5-Minute Smart Caching (NEW!)
 
-- **Caché Automático**: Todos los datos se almacenan en caché por 5 minutos por defecto
-- **Mejora de Velocidad 100-2000x**: Las llamadas en caché toman microsegundos vs llamadas a la API en milisegundos
-- **Reducción del 95% en Llamadas a la API**: Reduce drásticamente el ancho de banda y el rate limiting
-- **Thread-Safe**: Seguro para acceso concurrente a través de múltiples goroutines
-- **Datos Frescos Garantizados**: El caché expira automáticamente después de 5 minutos
+- **Automatic Caching**: All data cached for 5 minutes by default
+- **100-2000x Speed Improvement**: Cached calls take microseconds vs API calls in milliseconds
+- **95% API Call Reduction**: Dramatically reduces bandwidth and rate limiting
+- **Thread-Safe**: Safe for concurrent access across multiple goroutines
+- **Fresh Data Guaranteed**: Cache automatically expires after 5 minutes
 
-### Beneficios de Rendimiento
+### Performance Benefits
 
-- **Búsquedas Individuales**: Obtené tickers específicos sin recuperar colecciones completas
-- **Operaciones por Lotes**: Recuperá eficientemente múltiples valores usando caché compartido
-- **Pooling de Conexiones**: Reutilización automática de conexiones HTTP
-- **Lógica de Reintentos**: Retroceso exponencial incorporado para solicitudes fallidas
-- **Soporte de Context**: Manejo adecuado de cancelación y timeouts
+- **Individual Lookups**: Get specific tickers without fetching entire collections
+- **Batch Operations**: Efficiently retrieve multiple securities using shared cache
+- **Connection Pooling**: Automatic HTTP connection reuse
+- **Retry Logic**: Built-in exponential backoff for failed requests
+- **Context Support**: Proper cancellation and timeout handling
 
-### Caché en Acción
+### Caching in Action
 
 ```go
 // First call - fetches from API (slow)
@@ -473,7 +471,7 @@ securities, _ := client.GetMultipleSecurities(ctx, []string{"AAPL", "MSFT", "GOO
 // All symbols returned instantly from cache!
 ```
 
-### Acceso Concurrente
+### Concurrent Access
 
 ```go
 // Example: Fetch multiple data types concurrently
@@ -502,9 +500,9 @@ go func() {
 wg.Wait()
 ```
 
-## Referencia a la Librería Python
+## Python Library Reference
 
-Esta librería está inspirada en y proporciona funcionalidad equivalente a la librería original en Python [pyOBD](https://github.com/franco-lamas/PyOBD), con mejoras específicas de Go:
+This library is inspired by and provides equivalent functionality to the original Python [pyOBD](https://github.com/franco-lamas/PyOBD) library, with Go-specific improvements:
 
 | Python pyOBD | Go openbymadata |
 |---------------|-----------------|
@@ -515,33 +513,33 @@ Esta librería está inspirada en y proporciona funcionalidad equivalente a la l
 | Basic error handling | Rich error types |
 | Manual caching | Built-in 5-minute caching |
 
-## Cómo Contribuir
+## Contributing
 
-1. Hacé un fork del repositorio
-2. Creá tu rama de funcionalidad (`git checkout -b feature/funcionalidad-asombrosa`)
-3. Sumá tests para tus cambios
-4. Corré los tests: `go test ./...`
-5. Commiteá tus cambios (`git commit -am 'Agrega funcionalidad asombrosa'`)
-6. Pusheá a la rama (`git push origin feature/funcionalidad-asombrosa`)
-7. Abrí un Pull Request
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Add tests for your changes
+4. Run tests: `go test ./...`
+5. Commit your changes (`git commit -am 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la Licencia MIT - mirá el archivo [LICENSE](LICENSE) para más detalles.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Agradecimientos
+## Acknowledgments
 
-- Librería original en Python [pyOBD](https://github.com/franco-lamas/PyOBD)
-- [BYMA](https://www.byma.com.ar/) por proporcionar la API gratuita
-- Comunidad de Go por excelentes herramientas y librerías
+- Original Python [pyOBD](https://github.com/franco-lamas/PyOBD) library
+- [BYMA](https://www.byma.com.ar/) for providing the free API
+- Go community for excellent tooling and libraries
 
-## Registro de Cambios
+## Changelog
 
 ### v0.1.0
-- Lanzamiento inicial
-- Cobertura completa de la API de BYMA
-- Sistema de caché de 5 minutos incorporado
-- Búsquedas individuales de tickers y operaciones por lotes
-- Suite completa de tests con servidores HTTP de prueba
-- Optimizaciones de rendimiento y manejo rico de errores
-- Soporte de context con timeout y cancelación
+- Initial release
+- Comprehensive BYMA API coverage
+- Built-in 5-minute caching system
+- Individual ticker lookups and batch operations
+- Comprehensive test suite with HTTP test servers
+- Performance optimizations and rich error handling
+- Context support with timeout and cancellation
