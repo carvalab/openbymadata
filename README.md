@@ -22,6 +22,7 @@ Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurr
 - **Acciones**: Líderes (blue chips), Panel general (galpones), CEDEARs  
 - **Renta Fija**: Bonos gubernamentales, bonos corporativos, letras de corto plazo (LEBACs)
 - **Derivados**: Contratos de opciones, futuros
+- **Datos Históricos**: Series temporales con OHLCV (Open, High, Low, Close, Volume) para gráficos
 - **Datos de Mercado**: Índices, resumen del mercado, estado de días hábiles
 - **Noticias y Financieros**: Noticias del mercado, estados de resultados
 
@@ -254,6 +255,35 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 
 // Buscar valores por símbolo parcial
 results, err := client.SearchSecurities(ctx, "APP")  // Encuentra símbolos que contienen "APP"
+```
+
+### Datos Históricos y Gráficos (¡NUEVO! 📈)
+
+```go
+// Obtener datos históricos para los últimos 30 días (automáticamente agrega "24HS")
+historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+
+// Obtener datos históricos con rango de fechas personalizado
+// Símbolos se normalizan automáticamente (se agrega "24HS" si no está presente)
+// Resolución: "D" = diario, "W" = semanal, "M" = mensual
+// from/to son time.Time (conversión a Unix automática)
+from := time.Now().AddDate(0, -3, 0)  // 3 meses atrás
+to := time.Now()                      // ahora
+weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+
+// Los datos retornan OHLCV como slices separados (formato más eficiente)
+for i := range len(historyData.Time) {
+    date := time.Unix(historyData.Time[i], 0)
+    fmt.Printf("%s: Close=$%.2f, Volume=%d\n", 
+        date.Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
+}
+
+// Opcional: Convertir a formato estructurado si es necesario
+structuredData, err := client.ConvertToHistoricalData(historyData)
+for _, candle := range structuredData {
+    date := time.Unix(candle.Time, 0)
+    fmt.Printf("%s: Close=$%.2f\n", date.Format("2006-01-02"), candle.Close)
+}
 ```
 
 ### Estado e Información del Mercado

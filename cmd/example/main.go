@@ -263,9 +263,66 @@ func main() {
 	fmt.Printf("%v (lightning fast!)\n", cachedDuration)
 
 	// =============================================================================
-	// 7. News & Financial Data
+	// 7. Historical Data (Chart Data)
 	// =============================================================================
-	fmt.Println("\n📰 7. News & Financial Data")
+	fmt.Println("\n📈 7. Historical Data (Chart Data)")
+	fmt.Println(strings.Repeat("-", 35))
+
+	// Get historical data for SPY (S&P 500 ETF) - last 30 days
+	fmt.Printf("📊 Historical Data for SPY (last 30 days):\n")
+	historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+	if err != nil {
+		log.Printf("Error getting historical data: %v", err)
+	} else {
+		fmt.Printf("   Retrieved %d data points:\n", len(historyData.Time))
+		if len(historyData.Time) >= 3 {
+			// Show first, middle, and last data points
+			for i, dataIndex := range []int{0, len(historyData.Time) / 2, len(historyData.Time) - 1} {
+				date := time.Unix(historyData.Time[dataIndex], 0).Format("2006-01-02")
+				position := []string{"First", "Middle", "Latest"}[i]
+				fmt.Printf("   %s (%s): Open=$%.2f High=$%.2f Low=$%.2f Close=$%.2f Vol=%d\n",
+					position, date, historyData.Open[dataIndex], historyData.High[dataIndex],
+					historyData.Low[dataIndex], historyData.Close[dataIndex], historyData.Volume[dataIndex])
+			}
+		}
+	}
+
+	// Get custom date range historical data (weekly data)
+	fmt.Printf("\n📅 Custom Date Range (Weekly data - last 3 months):\n")
+	now := time.Now()
+	threeMonthsAgo := now.AddDate(0, -3, 0)
+	weeklyData, err := client.GetHistory(ctx, "AAPL", "W", threeMonthsAgo, now)
+	if err != nil {
+		log.Printf("Error getting weekly data: %v", err)
+	} else {
+		fmt.Printf("   AAPL Weekly Data - %d weeks retrieved\n", len(weeklyData.Time))
+		if len(weeklyData.Time) > 0 {
+			lastIndex := len(weeklyData.Time) - 1
+			latestDate := time.Unix(weeklyData.Time[lastIndex], 0).Format("2006-01-02")
+			fmt.Printf("   Latest week (%s): Close=$%.2f\n", latestDate, weeklyData.Close[lastIndex])
+		}
+	}
+
+	// Example: Convert OHLCV slices to HistoricalData format if needed
+	fmt.Printf("\n🔄 Converting to HistoricalData format (if needed):\n")
+	if historyData != nil && len(historyData.Time) > 0 {
+		structuredData, err := client.ConvertToHistoricalData(historyData)
+		if err != nil {
+			log.Printf("Error converting to structured format: %v", err)
+		} else {
+			fmt.Printf("   Converted %d OHLCV data points to HistoricalData structs\n", len(structuredData))
+			if len(structuredData) > 0 {
+				first := structuredData[0]
+				date := time.Unix(first.Time, 0).Format("2006-01-02")
+				fmt.Printf("   First point (%s): $%.2f\n", date, first.Close)
+			}
+		}
+	}
+
+	// =============================================================================
+	// 8. News & Financial Data
+	// =============================================================================
+	fmt.Println("\n📰 8. News & Financial Data")
 	fmt.Println(strings.Repeat("-", 30))
 
 	news, err := client.GetNews(ctx)
@@ -301,11 +358,13 @@ func main() {
 	fmt.Println("✨ Features Demonstrated:")
 	fmt.Println("   • Individual ticker lookups (GetCedear, GetBluechip, GetSecurity)")
 	fmt.Println("   • Efficient batch operations (GetMultipleSecurities)")
+	fmt.Println("   • Historical data & charting (GetHistory, GetHistoryLastDays)")
 	fmt.Println("   • 5-minute automatic caching (reduces API calls by 95%)")
 	fmt.Println("   • API endpoint mapping:")
 	fmt.Println("     - GetBluechips()  → 'leading-equity' endpoint")
 	fmt.Println("     - GetGalpones()   → 'general-equity' endpoint")
 	fmt.Println("     - GetCedears()    → 'cedears' endpoint")
+	fmt.Println("     - GetHistory()    → 'chart/historical-series/history' endpoint")
 	fmt.Println("   • Full market data coverage (equities, bonds, derivatives)")
 	fmt.Println("   • Real-time market news and financial data")
 	fmt.Println("   • Thread-safe concurrent operations")

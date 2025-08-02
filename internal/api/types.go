@@ -133,3 +133,24 @@ type IncomeStatement struct {
 type MarketTimeResponse struct {
 	IsWorkingDay bool `json:"isWorkingDay"`
 }
+
+// HistoricalData represents a single point in historical time series data
+type HistoricalData struct {
+	Time   int64   `json:"time"`   // Unix timestamp
+	Open   float64 `json:"open"`   // Opening price
+	High   float64 `json:"high"`   // Highest price
+	Low    float64 `json:"low"`    // Lowest price
+	Close  float64 `json:"close"`  // Closing price
+	Volume int64   `json:"volume"` // Trading volume
+}
+
+// HistoryResponse represents the response structure for historical data
+type HistoryResponse struct {
+	Status string    `json:"s"` // Status: "ok" or "no_data"
+	Time   []int64   `json:"t"` // Array of timestamps
+	Close  []float64 `json:"c"` // Array of closing prices
+	Open   []float64 `json:"o"` // Array of opening prices
+	High   []float64 `json:"h"` // Array of high prices
+	Low    []float64 `json:"l"` // Array of low prices
+	Volume []int64   `json:"v"` // Array of volumes
+}

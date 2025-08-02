@@ -20,6 +20,7 @@ Provides strongly-typed, concurrent-safe access to Argentine financial market da
 - **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs  
 - **Fixed Income**: Government bonds, corporate bonds, short-term bonds (LEBACs)
 - **Derivatives**: Options contracts, futures
+- **Historical Data**: Time series with OHLCV (Open, High, Low, Close, Volume) for charting
 - **Market Data**: Indices, market summary, working day status
 - **News & Financials**: Market news, income statements
 
@@ -252,6 +253,35 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 
 // Search securities by partial symbol
 results, err := client.SearchSecurities(ctx, "APP")  // Finds symbols containing "APP"
+```
+
+### Historical Data & Charting (NEW! 📈)
+
+```go
+// Get historical data for the last 30 days (automatically adds "24HS")
+historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+
+// Get historical data with custom date range
+// Symbols are normalized automatically ("24HS" suffix added if not present)
+// Resolution: "D" = daily, "W" = weekly, "M" = monthly
+// from/to are time.Time (automatic Unix conversion)
+from := time.Now().AddDate(0, -3, 0)  // 3 months ago
+to := time.Now()                      // now
+weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+
+// Data returns OHLCV as separate slices (most efficient format)
+for i := range len(historyData.Time) {
+    date := time.Unix(historyData.Time[i], 0)
+    fmt.Printf("%s: Close=$%.2f, Volume=%d\n", 
+        date.Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
+}
+
+// Optional: Convert to structured format if needed
+structuredData, err := client.ConvertToHistoricalData(historyData)
+for _, candle := range structuredData {
+    date := time.Unix(candle.Time, 0)
+    fmt.Printf("%s: Close=$%.2f\n", date.Format("2006-01-02"), candle.Close)
+}
 ```
 
 ### Market Status & Info

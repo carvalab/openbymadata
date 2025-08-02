@@ -51,6 +51,11 @@ type Client interface {
 	GetMultipleSecurities(ctx context.Context, symbols []string) (map[string]*Security, error)
 	SearchSecurities(ctx context.Context, searchText string) ([]Security, error)
 
+	// Historical Data
+	GetHistory(ctx context.Context, symbol, resolution string, from, to time.Time) (*OHLCV, error)
+	GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error)
+	ConvertToHistoricalData(slices *OHLCV) ([]HistoricalData, error)
+
 	// Cache management
 	GetCacheInfo() map[string]interface{}
 	ClearCache()
@@ -95,6 +100,8 @@ type (
 	MarketSummary   = api.MarketSummary
 	News            = api.News
 	IncomeStatement = api.IncomeStatement
+	HistoricalData  = api.HistoricalData
+	OHLCV           = api.OHLCV
 )
 
 // =============================================================================
