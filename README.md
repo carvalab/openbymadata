@@ -9,7 +9,7 @@ Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurr
 ## Características
 
 ### 🚀 **Rendimiento y Diseño**
-- **Caché Inteligente de 5 Minutos**: El almacenamiento en caché automático reduce las llamadas a la API en un 95% y mejora la velocidad entre 100 y 2000 veces
+- **Caché Inteligente de 5 Minutos**: El almacenamiento en caché automático reduce las llamadas a la API en un 95% y mejora la velocidad 100 veces
 - **Búsquedas Individuales de Tickers**: Obtené valores específicos sin necesidad de recuperar colecciones completas
 - **Operaciones por Lotes**: Recuperá múltiples valores de forma eficiente en una sola operación
 - **Tipado Fuerte**: No más `interface{}` genéricos - estructuras adecuadas para cada instrumento financiero
@@ -41,7 +41,15 @@ go get github.com/pablocarvajal/openbymadata
 
 ## Inicio Rápido
 
-### Búsquedas Individuales de Tickers (¡NUEVO!)
+📖 **La documentación completa con ejemplos está disponible directamente en el código y en [pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata)**
+
+### Instalación
+
+```bash
+go get github.com/carvalab/openbymadata
+```
+
+### Ejemplo Básico
 
 ```go
 package main
@@ -66,34 +74,43 @@ func main() {
     }
     fmt.Printf("🍎 AAPL: $%.2f (%.2f%%)\n", aapl.Last, aapl.Change)
 
-    // Conseguir acción específica argentina
-    ggal, err := client.GetBluechip(ctx, "GGAL")
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("🏦 GGAL: $%.2f (%.2f%%)\n", ggal.Last, ggal.Change)
-
-    // Búsqueda universal (no necesitás conocer el tipo de valor)
+    // Búsqueda universal (recomendada)
     security, err := client.GetSecurity(ctx, "BMA")
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("🔍 BMA: $%.2f (%.2f%%)\n", security.Last, security.Change)
-
-    // Conseguir múltiples tickers eficientemente (usa los mismos datos en caché)
-    watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
-    securities, err := client.GetMultipleSecurities(ctx, watchlist)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("\n💼 Portafolio (%d valores):\n", len(securities))
-    for symbol, security := range securities {
-        fmt.Printf("  %s: $%.2f (%.2f%%)\n", 
-            symbol, security.Last, security.Change)
-    }
+    fmt.Printf("🔍 BMA: $%.2f\n", security.Last)
 }
 ```
+
+### Funcionalidades Principales
+
+**🎯 Búsquedas Individuales:** Obtené valores específicos sin descargar colecciones completas
+```go
+// Búsqueda universal (funciona para cualquier tipo de valor)
+security, err := client.GetSecurity(ctx, "AAPL")
+
+// Tipos específicos
+aapl, err := client.GetCedear(ctx, "AAPL")     // CEDEARs (acciones de EEUU)
+ggal, err := client.GetBluechip(ctx, "GGAL")  // Acciones líderes argentinas
+```
+
+**⚡ Operaciones por Lotes:** Múltiples valores en una sola operación
+```go
+watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
+securities, err := client.GetMultipleSecurities(ctx, watchlist)
+```
+
+**📈 Datos Históricos:** Series temporales para gráficos
+```go
+// Últimos 30 días
+historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+
+// Rango personalizado
+weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+```
+
+**💾 Caché Inteligente:** Mejora de 100x en velocidad, reducción del 95% en llamadas a la API
 
 ### Acceso Tradicional Basado en Colecciones
 
@@ -195,6 +212,13 @@ Market Indices (15):
    🟢 A3: $2500.00 (0.01%)
    ... and 175 more
 
+🏛️  5. Fixed Income & Derivatives
+-----------------------------------
+📊 Government Bonds: 156 instruments
+   Example: AL30 - $428.50
+📈 Options: 2847 contracts
+🔮 Futures: 23 contracts
+
 ⚡ 6. Cache Performance (5-minute automatic caching)
 -------------------------------------------------------
 🗄️  Cache Status:
@@ -205,18 +229,53 @@ Market Indices (15):
 🏃 Cache Speed Test:
    Getting AAPL again (cached)... 750ns (lightning fast!)
 
+📈 7. Historical Data (Chart Data)
+-----------------------------------
+📊 Historical Data for SPY (last 30 days):
+   Retrieved 21 data points:
+   First (2024-02-15): Open=$484.21 High=$486.58 Low=$483.12 Close=$485.22 Vol=45782
+   Middle (2024-02-28): Open=$502.18 High=$503.47 Low=$501.25 Close=$502.87 Vol=52341
+   Latest (2024-03-15): Open=$518.45 High=$519.23 Low=$517.89 Close=$518.67 Vol=38945
+
+📅 Custom Date Range (Weekly data - last 3 months):
+   AAPL Weekly Data - 13 weeks retrieved
+   Latest week (2024-03-15): Close=$182.31
+
+🔄 Converting to HistoricalData format (if needed):
+   Converted 21 OHLCV data points to HistoricalData structs
+   First point (2024-02-15): $485.22
+
+📰 8. News & Financial Data
+------------------------------
+📰 Latest News (24 items):
+   📄 BYMA informa cotizaciones del día
+      Date: 2024-03-15 18:30
+   📄 Resultados trimestrales empresas listadas
+      Date: 2024-03-15 16:45
+📊 Income statements for ALUA: 8 records
+
 🎉 Example Complete!
 ============================================================
 ✨ Features Demonstrated:
    • Individual ticker lookups (GetCedear, GetBluechip, GetSecurity)
    • Efficient batch operations (GetMultipleSecurities)
+   • Historical data & charting (GetHistory, GetHistoryLastDays)
+   • 5-minute automatic caching (reduces API calls by 95%)
    • API endpoint mapping:
      - GetBluechips()  → 'leading-equity' endpoint
      - GetGalpones()   → 'general-equity' endpoint
      - GetCedears()    → 'cedears' endpoint
-   • 5-minute automatic caching (reduces API calls by 95%)
+     - GetHistory()    → 'chart/historical-series/history' endpoint
    • Full market data coverage (equities, bonds, derivatives)
+   • Real-time market news and financial data
    • Thread-safe concurrent operations
+   • Comprehensive error handling
+
+🚀 Production Ready:
+   • Context-aware operations
+   • Built-in retry logic
+   • Strongly-typed data structures
+   • Zero external dependencies
 ```
 
 ### Correr Pruebas de Ejemplo
@@ -227,6 +286,31 @@ go test -v -run "Example"
 
 # Correr prueba de ejemplo específica
 go test -v -run "ExampleClient"
+```
+
+## 📚 Documentación
+
+### Recursos Disponibles
+
+| Recurso | Descripción |
+|---------|-------------|
+| 📖 **[pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata)** | **Documentación principal** - Referencia completa de la API con ejemplos |
+| 🎯 **[example_test.go](example_test.go)** | Ejemplos ejecutables para todas las funcionalidades |
+| 🏛️ **[cmd/example/main.go](cmd/example/main.go)** | Demo completa mostrando toda la funcionalidad |
+| 💾 **[CACHING_GUIDE.md](CACHING_GUIDE.md)** | Guía detallada de rendimiento del caché |
+| 🐛 **[DEBUG.md](DEBUG.md)** | Guía de debugging y resolución de problemas |
+
+### Visualizando Documentación
+
+```bash
+# 🌐 Mejor opción: Visitar pkg.go.dev (ejemplos y markdown)
+# https://pkg.go.dev/github.com/carvalab/openbymadata
+
+# Documentación en terminal
+go doc -all
+
+# Correr ejemplos
+go test -v -run "Example"
 ```
 
 ## Referencia de la API
@@ -472,7 +556,7 @@ if err != nil {
 ### 🚀 Caché Inteligente de 5 Minutos (¡NUEVO!)
 
 - **Caché Automático**: Todos los datos se almacenan en caché por 5 minutos por defecto
-- **Mejora de Velocidad 100-2000x**: Las llamadas en caché toman microsegundos vs llamadas a la API en milisegundos
+- **Mejora de Velocidad 100x**: Las llamadas en caché toman microsegundos vs llamadas a la API en milisegundos
 - **Reducción del 95% en Llamadas a la API**: Reduce drásticamente el ancho de banda y el rate limiting
 - **Thread-Safe**: Seguro para acceso concurrente a través de múltiples goroutines
 - **Datos Frescos Garantizados**: El caché expira automáticamente después de 5 minutos
@@ -496,7 +580,7 @@ fmt.Printf("First call: %v\n", time.Since(start)) // ~100ms
 // Second call - returns from cache (fast!)
 start = time.Now()
 aapl, _ = client.GetCedear(ctx, "AAPL")
-fmt.Printf("Cached call: %v\n", time.Since(start)) // ~50µs (2000x faster!)
+fmt.Printf("Cached call: %v\n", time.Since(start)) // ~50µs (100x faster!)
 
 // Multiple securities use shared cache efficiently
 securities, _ := client.GetMultipleSecurities(ctx, []string{"AAPL", "MSFT", "GOOGL"})
