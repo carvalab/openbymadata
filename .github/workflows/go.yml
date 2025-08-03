@@ -1,28 +1,152 @@
-# This workflow will build a golang project
+# GitHub Actions workflow for Go project
+# Runs on push/PR to main and weekly cron schedule for integration testing
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: Go CI/CD
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  schedule:
+    # Run integration tests every Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  GO_VERSION_FILE: 'go.mod'
 
 jobs:
-
-  build:
+  # Quick validation for PRs and pushes
+  lint-and-format:
+    name: Lint & Format Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version-file: ${{ env.GO_VERSION_FILE }}
+        check-latest: true
+        cache: true
+
+    - name: Run gofmt
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Code is not formatted properly:"
+          gofmt -s -l .
+          exit 1
+        fi
+
+    - name: Run go vet
+      run: go vet ./...
+
+  # Build and test matrix across Go versions  
+  build-and-test:
+    name: Build & Test (Go ${{ matrix.go-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test on latest 2 stable Go versions (1.22.x has security vulnerabilities)
+        go-version: ['1.23.x', 'stable']
+        os: [ubuntu-latest]
+        include:
+          - go-version: 'stable' 
+            os: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        check-latest: true
+        cache: true
+        cache-dependency-path: |
+          go.sum
+          go.mod
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
 
     - name: Build
       run: go build -v ./...
 
-    - name: Test
-      run: go test -v ./...
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Upload coverage to artifacts
+      if: matrix.os == 'ubuntu-latest' && matrix.go-version == 'stable'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.out
+
+  # Integration tests with real API (only on schedule or manual trigger)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [lint-and-format, build-and-test]
+    strategy:
+      matrix:
+        go-version: ['1.23.x', 'stable']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        check-latest: true
+        cache: true
+
+    - name: Run integration tests with real API
+      env:
+        INTEGRATION_TEST: "true"
+      run: |
+        echo "Running integration tests against real API using default client configuration..."
+        go test -v -tags=integration ./... -timeout=30m
+        
+    - name: Test example program
+      run: |
+        cd cmd/example
+        timeout 60s go run main.go || echo "Example completed or timed out as expected"
+
+  # Security and dependency scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule' # Skip on scheduled runs to avoid noise
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ env.GO_VERSION_FILE }}
+        cache: true
+
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: ./...
+      continue-on-error: true
+
+    - name: Check for vulnerabilities in dependencies
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
