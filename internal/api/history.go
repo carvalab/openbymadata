@@ -52,7 +52,7 @@ func (c *Client) GetHistory(ctx context.Context, symbol, resolution string, from
 	}
 
 	return &OHLCV{
-		Time:   historyResp.Time,
+		Time:   parseDates(historyResp.Time),
 		Open:   historyResp.Open,
 		High:   historyResp.High,
 		Low:    historyResp.Low,
@@ -97,10 +97,20 @@ func (c *Client) ConvertToHistoricalData(slices *OHLCV) ([]HistoricalData, error
 
 // OHLCV represents historical data as separate slices
 type OHLCV struct {
-	Time   []int64   `json:"time"`
-	Open   []float64 `json:"open"`
-	High   []float64 `json:"high"`
-	Low    []float64 `json:"low"`
-	Close  []float64 `json:"close"`
-	Volume []int64   `json:"volume"`
+	Time   []time.Time `json:"time"`
+	Open   []float64   `json:"open"`
+	High   []float64   `json:"high"`
+	Low    []float64   `json:"low"`
+	Close  []float64   `json:"close"`
+	Volume []int64     `json:"volume"`
+}
+
+func parseDates(unixTimes []int64) []time.Time {
+	res := make([]time.Time, len(unixTimes))
+
+	for i, t := range unixTimes {
+		res[i] = time.Unix(t, 0)
+	}
+
+	return res
 }

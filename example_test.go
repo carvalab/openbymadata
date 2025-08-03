@@ -215,7 +215,7 @@ func _ExampleClient_GetHistoryLastDays() {
 
 	fmt.Printf("Historical data for AAPL (%d data points):\n", len(historyData.Time))
 	for i := 0; i < len(historyData.Time) && i < 2; i++ {
-		date := time.Unix(historyData.Time[i], 0).Format("2006-01-02")
+		date := historyData.Time[i].Format("2006-01-02")
 		fmt.Printf("  %s: Open=$%.2f High=$%.2f Low=$%.2f Close=$%.2f Volume=%d\n",
 			date, historyData.Open[i], historyData.High[i], historyData.Low[i],
 			historyData.Close[i], historyData.Volume[i])

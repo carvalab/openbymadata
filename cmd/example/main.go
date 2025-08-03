@@ -278,7 +278,7 @@ func main() {
 		if len(historyData.Time) >= 3 {
 			// Show first, middle, and last data points
 			for i, dataIndex := range []int{0, len(historyData.Time) / 2, len(historyData.Time) - 1} {
-				date := time.Unix(historyData.Time[dataIndex], 0).Format("2006-01-02")
+				date := historyData.Time[dataIndex].Format("2006-01-02")
 				position := []string{"First", "Middle", "Latest"}[i]
 				fmt.Printf("   %s (%s): Open=$%.2f High=$%.2f Low=$%.2f Close=$%.2f Vol=%d\n",
 					position, date, historyData.Open[dataIndex], historyData.High[dataIndex],
@@ -298,7 +298,7 @@ func main() {
 		fmt.Printf("   AAPL Weekly Data - %d weeks retrieved\n", len(weeklyData.Time))
 		if len(weeklyData.Time) > 0 {
 			lastIndex := len(weeklyData.Time) - 1
-			latestDate := time.Unix(weeklyData.Time[lastIndex], 0).Format("2006-01-02")
+			latestDate := weeklyData.Time[lastIndex].Format("2006-01-02")
 			fmt.Printf("   Latest week (%s): Close=$%.2f\n", latestDate, weeklyData.Close[lastIndex])
 		}
 	}
@@ -313,7 +313,7 @@ func main() {
 			fmt.Printf("   Converted %d OHLCV data points to HistoricalData structs\n", len(structuredData))
 			if len(structuredData) > 0 {
 				first := structuredData[0]
-				date := time.Unix(first.Time, 0).Format("2006-01-02")
+				date := first.Time.Format("2006-01-02")
 				fmt.Printf("   First point (%s): $%.2f\n", date, first.Close)
 			}
 		}

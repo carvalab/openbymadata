@@ -355,16 +355,14 @@ weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
 
 // Data returns OHLCV as separate slices (most efficient format)
 for i := range len(historyData.Time) {
-    date := time.Unix(historyData.Time[i], 0)
     fmt.Printf("%s: Close=$%.2f, Volume=%d\n", 
-        date.Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
+        historyData.Time[i].Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
 }
 
 // Optional: Convert to structured format if needed
 structuredData, err := client.ConvertToHistoricalData(historyData)
 for _, candle := range structuredData {
-    date := time.Unix(candle.Time, 0)
-    fmt.Printf("%s: Close=$%.2f\n", date.Format("2006-01-02"), candle.Close)
+    fmt.Printf("%s: Close=$%.2f\n", candle.Time.Format("2006-01-02"), candle.Close)
 }
 ```
 
