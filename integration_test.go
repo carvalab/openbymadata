@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package openbymadata_test
+package openbymadata
 
 import (
 	"context"
