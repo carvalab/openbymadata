@@ -131,10 +131,10 @@ type IncomeStatement struct {
 
 // MarketTimeResponse represents the market time API response
 type MarketTimeResponse struct {
-	IsWorkingDay       bool   `json:"isWorkingDay"`
-	MarketOpeningTime  string `json:"marketOpeningTime"`
-	MarketClosingTime  string `json:"marketClosingTime"`
-	Timezone           string `json:"timezone"`
+	IsWorkingDay      bool   `json:"isWorkingDay"`
+	MarketOpeningTime string `json:"marketOpeningTime"`
+	MarketClosingTime string `json:"marketClosingTime"`
+	Timezone          string `json:"timezone"`
 }
 
 // MarketTime exposes the parsed market-time response, with the opening

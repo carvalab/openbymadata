@@ -121,21 +121,21 @@ func ParseSettlement(value string) (Settlement, bool) {
 // =============================================================================
 
 type (
-	Security         = api.Security
-	Bond             = api.Bond
-	Option           = api.Option
-	Future           = api.Future
-	Index            = api.Index
-	MarketSummary    = api.MarketSummary
-	News             = api.News
-	IncomeStatement  = api.IncomeStatement
-	OHLCV            = api.OHLCV
-	MarketTime       = api.MarketTime
-	CurrentQuote     = api.CurrentQuote
-	CompanyInfo      = api.CompanyInfo
-	EquityProfile    = api.EquityProfile
-	CompanyDirector  = api.CompanyDirector
-	CompanyBalance   = api.CompanyBalance
+	Security        = api.Security
+	Bond            = api.Bond
+	Option          = api.Option
+	Future          = api.Future
+	Index           = api.Index
+	MarketSummary   = api.MarketSummary
+	News            = api.News
+	IncomeStatement = api.IncomeStatement
+	OHLCV           = api.OHLCV
+	MarketTime      = api.MarketTime
+	CurrentQuote    = api.CurrentQuote
+	CompanyInfo     = api.CompanyInfo
+	EquityProfile   = api.EquityProfile
+	CompanyDirector = api.CompanyDirector
+	CompanyBalance  = api.CompanyBalance
 )
 
 // =============================================================================
