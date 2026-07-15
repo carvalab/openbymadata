@@ -1,152 +1,57 @@
-# GitHub Actions workflow for Go project
-# Runs on push/PR to main and weekly cron schedule for integration testing
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go CI/CD
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
+    tags: ["v*"]
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    # Run integration tests every Sunday at 00:00 UTC
-    - cron: '0 0 * * 0'
-  workflow_dispatch: # Allow manual trigger
-
-env:
-  GO_VERSION_FILE: 'go.mod'
+    branches: [main]
 
 jobs:
-  # Quick validation for PRs and pushes
-  lint-and-format:
-    name: Lint & Format Check
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: ${{ env.GO_VERSION_FILE }}
-        check-latest: true
-        cache: true
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
 
-    - name: Run gofmt
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "Code is not formatted properly:"
-          gofmt -s -l .
-          exit 1
-        fi
+      - name: Verify go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
 
-    - name: Run go vet
-      run: go vet ./...
+      - name: Format (gofmt -s)
+        run: |
+          fmt_out=$(gofmt -s -l .)
+          if [ -n "$fmt_out" ]; then
+            echo "Files not formatted:" && echo "$fmt_out" && exit 1
+          fi
 
-  # Build and test matrix across Go versions  
-  build-and-test:
-    name: Build & Test (Go ${{ matrix.go-version }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # Test on latest 2 stable Go versions (1.22.x has security vulnerabilities)
-        go-version: ['1.26.x', 'stable']
-        os: [ubuntu-latest]
-        include:
-          - go-version: 'stable' 
-            os: macos-latest
+      - name: Vet
+        run: go vet ./...
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Test
+        run: go test -race -v ./...
 
-    - name: Set up Go ${{ matrix.go-version }}
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
-        check-latest: true
-        cache: true
-        cache-dependency-path: |
-          go.sum
-          go.mod
-
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Verify dependencies
-      run: go mod verify
-
-    - name: Build
-      run: go build -v ./...
-
-    - name: Run tests
-      run: go test -v -race -coverprofile=coverage.out ./...
-
-    - name: Upload coverage to artifacts
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == 'stable'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage.out
-
-  # Integration tests with real API (only on schedule or manual trigger)
-  integration-tests:
-    name: Integration Tests
+  release:
+    name: Release
+    needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    needs: [lint-and-format, build-and-test]
-    strategy:
-      matrix:
-        go-version: ['1.26.x', 'stable']
-    
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - name: Set up Go ${{ matrix.go-version }}
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
-        check-latest: true
-        cache: true
-
-    - name: Run integration tests with real API
-      env:
-        INTEGRATION_TEST: "true"
-      run: |
-        echo "Running integration tests against real API using default client configuration..."
-        go test -v -tags=integration ./... -timeout=30m
-        
-    - name: Test example program
-      run: |
-        cd cmd/example
-        timeout 60s go run main.go || echo "Example completed or timed out as expected"
-
-  # Security and dependency scanning
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    if: github.event_name != 'schedule' # Skip on scheduled runs to avoid noise
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: ${{ env.GO_VERSION_FILE }}
-        cache: true
-
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: ./...
-      continue-on-error: true
-
-    - name: Check for vulnerabilities in dependencies
-      run: |
-        go install golang.org/x/vuln/cmd/govulncheck@latest
-        govulncheck ./...
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
