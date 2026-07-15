@@ -10,33 +10,28 @@ import (
 
 // GetBluechips retrieves leading equity securities (blue chip stocks)
 func (c *Client) GetBluechips(ctx context.Context) ([]Security, error) {
-	return c.getSecurities(ctx, "leading-equity")
+	return c.getSecurities(ctx, pathLeadingEquity)
 }
 
 // GetGalpones retrieves general equity securities
 func (c *Client) GetGalpones(ctx context.Context) ([]Security, error) {
-	return c.getSecurities(ctx, "general-equity")
+	return c.getSecurities(ctx, pathGeneralEquity)
 }
 
 // GetCedears retrieves CEDEAR securities
 func (c *Client) GetCedears(ctx context.Context) ([]Security, error) {
-	return c.getSecurities(ctx, "cedears")
+	return c.getSecurities(ctx, pathCedears)
 }
 
-// getSecurities is a helper function to retrieve securities from different endpoints
 func (c *Client) getSecurities(ctx context.Context, endpoint string) ([]Security, error) {
-	// Use payload: excludeZeroPxAndQty=false, T1=true, others false
 	data := []byte(`{"excludeZeroPxAndQty":false,"T2":false,"T1":true,"T0":false,"Content-Type":"application/json"}`)
-	url := c.buildURL(endpoint)
-
-	respData, err := c.post(url, data)
+	respData, err := c.post(c.buildURL(endpoint), data)
 	if err != nil {
 		return nil, err
 	}
 
 	var rawSecurities []map[string]interface{}
-	// CEDEARs return data directly, others return wrapped in 'data'
-	if endpoint == "cedears" {
+	if endpoint == pathCedears {
 		if err := json.Unmarshal(respData, &rawSecurities); err != nil {
 			return nil, fmt.Errorf("invalid response: %w", err)
 		}
@@ -48,7 +43,7 @@ func (c *Client) getSecurities(ctx context.Context, endpoint string) ([]Security
 
 	securities := make([]Security, 0, len(rawSecurities))
 	for _, raw := range rawSecurities {
-		security := Security{
+		securities = append(securities, Security{
 			Symbol:        utils.GetString(raw, "symbol"),
 			Settlement:    utils.GetString(raw, "settlementType"),
 			BidSize:       utils.GetInt64(raw, "quantityBid"),
@@ -67,8 +62,7 @@ func (c *Client) getSecurities(ctx context.Context, endpoint string) ([]Security
 			Operations:    utils.GetInt64(raw, "numberOfOrders"),
 			DateTime:      utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
 			Group:         utils.GetString(raw, "securityType"),
-		}
-		securities = append(securities, security)
+		})
 	}
 
 	return securities, nil

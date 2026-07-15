@@ -9,8 +9,7 @@ import (
 
 // GetNews retrieves market news
 func (c *Client) GetNews(ctx context.Context) ([]News, error) {
-	url := c.buildURL("bnown/byma-ads")
-	respData, err := c.post(url, []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(c.buildURL(pathNews), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -22,13 +21,12 @@ func (c *Client) GetNews(ctx context.Context) ([]News, error) {
 
 	news := make([]News, 0, len(rawNews))
 	for _, raw := range rawNews {
-		newsItem := News{
+		news = append(news, News{
 			Fecha:       utils.GetTime(raw, "fecha"),
-			Titulo:      utils.GetString(raw, "emisor"),     // emisor is the company name (title)
-			Descripcion: utils.GetString(raw, "referencia"), // referencia is the description
+			Titulo:      utils.GetString(raw, "emisor"),
+			Descripcion: utils.GetString(raw, "referencia"),
 			Descarga:    "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/sba/download/" + utils.GetString(raw, "descarga"),
-		}
-		news = append(news, newsItem)
+		})
 	}
 
 	return news, nil
@@ -36,9 +34,7 @@ func (c *Client) GetNews(ctx context.Context) ([]News, error) {
 
 // GetIncomeStatement retrieves income statement data for a specific ticker
 func (c *Client) GetIncomeStatement(ctx context.Context, ticker string) ([]IncomeStatement, error) {
-	url := c.buildURL("bnown/seriesHistoricas/balances")
-	data := fmt.Sprintf(`{"symbol": "%s", "Content-Type": "application/json"}`, ticker)
-	respData, err := c.post(url, []byte(data))
+	respData, err := c.post(c.buildURL(pathBalances), []byte(fmt.Sprintf(`{"symbol": "%s", "Content-Type": "application/json"}`, ticker)))
 	if err != nil {
 		return nil, err
 	}
@@ -50,14 +46,13 @@ func (c *Client) GetIncomeStatement(ctx context.Context, ticker string) ([]Incom
 
 	statements := make([]IncomeStatement, 0, len(rawStatements))
 	for _, raw := range rawStatements {
-		statement := IncomeStatement{
+		statements = append(statements, IncomeStatement{
 			Symbol:          utils.GetString(raw, "symbol"),
 			Periodo:         utils.GetString(raw, "periodo"),
 			TipoPeriodo:     utils.GetString(raw, "tipoPeriodo"),
 			FechaCierre:     utils.GetString(raw, "fechaCierre"),
 			BalancesArchivo: "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/sba/download/" + utils.GetString(raw, "balancesArchivo"),
-		}
-		statements = append(statements, statement)
+		})
 	}
 
 	return statements, nil

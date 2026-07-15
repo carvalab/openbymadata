@@ -10,33 +10,28 @@ import (
 
 // GetBonds retrieves government bonds (public bonds)
 func (c *Client) GetBonds(ctx context.Context) ([]Bond, error) {
-	return c.getFixedIncome(ctx, "public-bonds")
+	return c.getFixedIncome(ctx, pathPublicBonds)
 }
 
 // GetShortTermBonds retrieves short-term government bonds (LEBACs)
 func (c *Client) GetShortTermBonds(ctx context.Context) ([]Bond, error) {
-	return c.getFixedIncome(ctx, "lebacs")
+	return c.getFixedIncome(ctx, pathLetters)
 }
 
 // GetCorporateBonds retrieves corporate bonds (negotiable obligations)
 func (c *Client) GetCorporateBonds(ctx context.Context) ([]Bond, error) {
-	return c.getFixedIncome(ctx, "negociable-obligations")
+	return c.getFixedIncome(ctx, pathCorpBonds)
 }
 
-// getFixedIncome is a helper function to retrieve bonds from different endpoints
 func (c *Client) getFixedIncome(ctx context.Context, endpoint string) ([]Bond, error) {
-	// Use standard payload for fixed income data
 	data := []byte(`{"excludeZeroPxAndQty":false,"T2":false,"T1":true,"T0":false,"Content-Type":"application/json"}`)
-	url := c.buildURL(endpoint)
-
-	respData, err := c.post(url, data)
+	respData, err := c.post(c.buildURL(endpoint), data)
 	if err != nil {
 		return nil, err
 	}
 
 	var rawBonds []map[string]interface{}
-	// public-bonds and lebacs return data wrapped, negociable-obligations return direct
-	if endpoint == "public-bonds" || endpoint == "lebacs" {
+	if endpoint == pathPublicBonds || endpoint == pathLetters {
 		if err := c.parseAPIResponse(respData, &rawBonds); err != nil {
 			return nil, err
 		}
@@ -48,7 +43,7 @@ func (c *Client) getFixedIncome(ctx context.Context, endpoint string) ([]Bond, e
 
 	bonds := make([]Bond, 0, len(rawBonds))
 	for _, raw := range rawBonds {
-		bond := Bond{
+		bonds = append(bonds, Bond{
 			Symbol:        utils.GetString(raw, "symbol"),
 			Settlement:    utils.GetString(raw, "settlementType"),
 			BidSize:       utils.GetInt64(raw, "quantityBid"),
@@ -68,8 +63,7 @@ func (c *Client) getFixedIncome(ctx context.Context, endpoint string) ([]Bond, e
 			DateTime:      utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
 			Group:         utils.GetString(raw, "securityType"),
 			Expiration:    utils.GetTime(raw, "maturityDate"),
-		}
-		bonds = append(bonds, bond)
+		})
 	}
 
 	return bonds, nil

@@ -9,61 +9,64 @@ import (
 	"time"
 )
 
-// GetHistory retrieves historical price data for a given symbol as OHLCV arrays
-// symbol: the ticker symbol (will always have "24HS" suffix added)
-// resolution: "D" for daily, "W" for weekly, "M" for monthly
-// from: Start date as time.Time
-// to: End date as time.Time
-func (c *Client) GetHistory(ctx context.Context, symbol, resolution string, from, to time.Time) (*OHLCV, error) {
-	symbol = symbol + " 24HS"
+// GetHistory retrieves historical OHLCV data for a given symbol and resolution.
+// symbol is sent verbatim; callers that need a specific settlement window
+// should include it (e.g. "GGAL 24HS"). When the API responds with status
+// "no_data", an empty *OHLCV is returned without raising an error so callers
+// can distinguish "no data" from transport failures.
+func (c *Client) GetHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	return c.fetchHistory(symbol, resolution, from, to)
+}
 
-	fromUnix := from.Unix()
-	toUnix := to.Unix()
+// GetHistoryLastDays is a convenience wrapper that requests daily bars for
+// the trailing N days, ending now.
+func (c *Client) GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error) {
+	to := time.Now()
+	from := to.AddDate(0, 0, -days)
+	return c.GetHistory(ctx, symbol, ResolutionDaily, from, to)
+}
 
-	endpoint := "chart/historical-series/history"
-	baseURL := c.buildURL(endpoint)
+// GetIntradayHistory requests 1-minute bars by default. Use a different
+// Resolution (5 or 60) for coarser aggregation.
+func (c *Client) GetIntradayHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	if resolution == ResolutionDaily || resolution == ResolutionWeekly || resolution == ResolutionMonthly {
+		return nil, fmt.Errorf("intraday resolution must be %q, %q or %q", Resolution1Min, Resolution5Min, Resolution60Min)
+	}
+	return c.fetchHistory(symbol, resolution, from, to)
+}
 
+func (c *Client) fetchHistory(symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
 	params := url.Values{}
-	params.Add("symbol", symbol)
-	params.Add("resolution", resolution)
-	params.Add("from", strconv.FormatInt(fromUnix, 10))
-	params.Add("to", strconv.FormatInt(toUnix, 10))
+	params.Set("symbol", symbol)
+	params.Set("resolution", string(resolution))
+	params.Set("from", strconv.FormatInt(from.Unix(), 10))
+	params.Set("to", strconv.FormatInt(to.Unix(), 10))
 
-	fullURL := baseURL + "?" + params.Encode()
-
-	respData, err := c.get(fullURL)
+	respData, err := c.get(c.buildURL(pathHistorical) + "?" + params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history data: %w", err)
 	}
 
-	var historyResp HistoryResponse
-	if err := json.Unmarshal(respData, &historyResp); err != nil {
+	var resp HistoryResponse
+	if err := json.Unmarshal(respData, &resp); err != nil {
 		return nil, fmt.Errorf("failed to parse history response: %w", err)
 	}
 
-	if historyResp.Status != "ok" {
-		return nil, fmt.Errorf("no historical data available for symbol %s (status: %s)", symbol, historyResp.Status)
+	if resp.Status != "ok" || len(resp.Time) == 0 {
+		return &OHLCV{}, nil
 	}
 
 	return &OHLCV{
-		Time:   parseDates(historyResp.Time),
-		Open:   historyResp.Open,
-		High:   historyResp.High,
-		Low:    historyResp.Low,
-		Close:  historyResp.Close,
-		Volume: historyResp.Volume,
+		Time:   parseDates(resp.Time),
+		Open:   resp.Open,
+		High:   resp.High,
+		Low:    resp.Low,
+		Close:  resp.Close,
+		Volume: resp.Volume,
 	}, nil
 }
 
-// GetHistoryLastDays is a convenience method to get history for the last N days
-func (c *Client) GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error) {
-	to := time.Now()
-	from := to.AddDate(0, 0, -days)
-
-	return c.GetHistory(ctx, symbol, "D", from, to)
-}
-
-// OHLCV represents historical data as separate slices
+// OHLCV represents historical data as separate slices.
 type OHLCV struct {
 	Time   []time.Time `json:"time"`
 	Open   []float64   `json:"open"`
@@ -75,10 +78,8 @@ type OHLCV struct {
 
 func parseDates(unixTimes []int64) []time.Time {
 	res := make([]time.Time, len(unixTimes))
-
 	for i, t := range unixTimes {
 		res[i] = time.Unix(t, 0)
 	}
-
 	return res
 }

@@ -131,7 +131,69 @@ type IncomeStatement struct {
 
 // MarketTimeResponse represents the market time API response
 type MarketTimeResponse struct {
-	IsWorkingDay bool `json:"isWorkingDay"`
+	IsWorkingDay       bool   `json:"isWorkingDay"`
+	MarketOpeningTime  string `json:"marketOpeningTime"`
+	MarketClosingTime  string `json:"marketClosingTime"`
+	Timezone           string `json:"timezone"`
+}
+
+// MarketTime exposes the parsed market-time response, with the opening
+// and closing instants derived from the textual fields when present.
+type MarketTime struct {
+	IsWorkingDay bool
+	Opens        time.Time
+	Closes       time.Time
+	Timezone     string
+	OpeningText  string
+	ClosingText  string
+}
+
+// CurrentQuote represents a per-symbol quote returned by the
+// /bnown/fichatecnica/especies/cotizacion endpoint.
+type CurrentQuote struct {
+	Symbol     string  `json:"symbol"`
+	Settlement string  `json:"settlementType"`
+	BidSize    int64   `json:"quantityBid"`
+	Bid        float64 `json:"bidPrice"`
+	AskSize    int64   `json:"quantityOffer"`
+	Ask        float64 `json:"offerPrice"`
+	Last       float64 `json:"settlementPrice"`
+	Open       float64 `json:"openingPrice"`
+	High       float64 `json:"tradingHighPrice"`
+	Low        float64 `json:"tradingLowPrice"`
+	Close      float64 `json:"closingPrice"`
+	Previous   float64 `json:"previousClosingPrice"`
+	Volume     int64   `json:"volume"`
+	Turnover   float64 `json:"volumeAmount"`
+	Operations int64   `json:"numberOfOrders"`
+	TradeHour  string  `json:"tradeHour"`
+}
+
+// CompanyInfo is the public profile of a listed society.
+type CompanyInfo struct {
+	Symbol string `json:"symbol"`
+	Fields map[string]string
+}
+
+// EquityProfile is the technical profile of an instrument/species.
+type EquityProfile struct {
+	Symbol string `json:"symbol"`
+	Fields map[string]string
+}
+
+// CompanyDirector represents a row in the company management endpoint.
+type CompanyDirector struct {
+	Name     string `json:"nombre"`
+	Position string `json:"cargo"`
+	Since    string `json:"desde"`
+	Until    string `json:"hasta"`
+	Type     string `json:"tipo"`
+}
+
+// CompanyBalance represents a single balance-sheet account row.
+type CompanyBalance struct {
+	Account string
+	Values  map[string]string
 }
 
 // HistoryResponse represents the response structure for historical data

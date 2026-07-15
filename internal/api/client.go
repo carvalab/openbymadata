@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,9 +47,6 @@ type Client struct {
 func New(opts *ClientOptions) *Client {
 	httpClient := &http.Client{
 		Timeout: opts.Timeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 	}
 
 	return &Client{
@@ -74,6 +70,13 @@ func New(opts *ClientOptions) *Client {
 			"Referer":            opts.BaseURL + "/",
 			"Accept-Language":    "es-US,es-419;q=0.9,es;q=0.8,en;q=0.7",
 		},
+	}
+}
+
+// Close releases the underlying HTTP transport.
+func (c *Client) Close() {
+	if t, ok := c.httpClient.Transport.(io.Closer); ok {
+		_ = t.Close()
 	}
 }
 
@@ -116,7 +119,6 @@ func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
 	return nil, fmt.Errorf("request failed after %d attempts: %w", c.retryAttempts+1, lastErr)
 }
 
-// makeRequest makes a single HTTP request
 func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
 	var body io.Reader
 	if data != nil {

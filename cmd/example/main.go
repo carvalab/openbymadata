@@ -22,6 +22,7 @@ func main() {
 		RetryAttempts: 3,
 		EnableCache:   true, // Default: true
 	})
+	defer client.Close()
 
 	ctx := context.Background()
 
@@ -268,6 +269,46 @@ func main() {
 	fmt.Println("\n📈 7. Historical Data (Chart Data)")
 	fmt.Println(strings.Repeat("-", 35))
 
+	now := time.Now()
+	threeMonthsAgo := now.AddDate(0, -3, 0)
+
+	marketTime, err := client.GetMarketTime(ctx)
+	if err != nil {
+		log.Printf("Error getting market time: %v", err)
+	} else {
+		fmt.Printf("🕒 Market opens at %s, closes at %s (%s)\n",
+			marketTime.OpeningText, marketTime.ClosingText, marketTime.Timezone)
+	}
+
+	quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+	if err != nil {
+		fmt.Printf("💲 Current quote for GGAL: %v\n", err)
+	} else {
+		fmt.Printf("💲 GGAL (48HS): last $%.2f, bid $%.2f, ask $%.2f\n",
+			quote.Last, quote.Bid, quote.Ask)
+	}
+
+	profile, err := client.GetEquityProfile(ctx, "ALUA")
+	if err != nil {
+		fmt.Printf("🏢 ALUA equity profile: %v\n", err)
+	} else {
+		fmt.Printf("🏢 ALUA equity profile fields: %d\n", len(profile.Fields))
+	}
+
+	directors, err := client.GetCompanyManagement(ctx, "ALUA")
+	if err != nil {
+		fmt.Printf("👥 ALUA management: %v\n", err)
+	} else {
+		fmt.Printf("👥 ALUA management entries: %d\n", len(directors))
+	}
+
+	intraday, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution5Min, threeMonthsAgo, now)
+	if err != nil {
+		log.Printf("Error getting intraday data: %v", err)
+	} else {
+		fmt.Printf("⏱️  GGAL 5-minute bars (last 3 months): %d points\n", len(intraday.Time))
+	}
+
 	// Get historical data for SPY (S&P 500 ETF) - last 30 days
 	fmt.Printf("📊 Historical Data for SPY (last 30 days):\n")
 	historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
@@ -289,9 +330,7 @@ func main() {
 
 	// Get custom date range historical data (weekly data)
 	fmt.Printf("\n📅 Custom Date Range (Weekly data - last 3 months):\n")
-	now := time.Now()
-	threeMonthsAgo := now.AddDate(0, -3, 0)
-	weeklyData, err := client.GetHistory(ctx, "AAPL", "W", threeMonthsAgo, now)
+	weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, threeMonthsAgo, now)
 	if err != nil {
 		log.Printf("Error getting weekly data: %v", err)
 	} else {

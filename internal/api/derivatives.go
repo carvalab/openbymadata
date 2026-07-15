@@ -10,10 +10,7 @@ import (
 
 // GetOptions retrieves options contracts
 func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
-	data := []byte(`{"Content-Type":"application/json"}`)
-	url := c.buildURL("options")
-
-	respData, err := c.post(url, data)
+	respData, err := c.post(c.buildURL(pathOptions), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +22,7 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 
 	options := make([]Option, 0, len(rawOptions))
 	for _, raw := range rawOptions {
-		option := Option{
+		options = append(options, Option{
 			Symbol:          utils.GetString(raw, "symbol"),
 			BidSize:         utils.GetInt64(raw, "quantityBid"),
 			Bid:             utils.GetFloat64(raw, "bidPrice"),
@@ -44,8 +41,7 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 			DateTime:        utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
 			UnderlyingAsset: utils.GetString(raw, "underlyingSymbol"),
 			Expiration:      utils.GetTime(raw, "maturityDate"),
-		}
-		options = append(options, option)
+		})
 	}
 
 	return options, nil
@@ -53,10 +49,7 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 
 // GetFutures retrieves futures contracts
 func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
-	data := []byte(`{"page_number":1,"excludeZeroPxAndQty":true,"Content-Type":"application/json"}`)
-	url := c.buildURL("index-future")
-
-	respData, err := c.post(url, data)
+	respData, err := c.post(c.buildURL(pathIndexFuture), []byte(`{"page_number":1,"excludeZeroPxAndQty":true,"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +61,10 @@ func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
 
 	futures := make([]Future, 0, len(rawFutures))
 	for _, raw := range rawFutures {
-		future := Future{
+		futures = append(futures, Future{
 			Symbol:        utils.GetString(raw, "symbol"),
 			BidSize:       utils.GetInt64(raw, "quantityBid"),
-			Bid:           utils.GetFloat64(raw, "bidPrice") * 1000, // Apply price multiplier for futures
+			Bid:           utils.GetFloat64(raw, "bidPrice") * 1000,
 			Ask:           utils.GetFloat64(raw, "offerPrice") * 1000,
 			AskSize:       utils.GetInt64(raw, "quantityOffer"),
 			Last:          utils.GetFloat64(raw, "settlementPrice") * 1000,
@@ -87,8 +80,7 @@ func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
 			DateTime:      utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
 			Expiration:    utils.GetTime(raw, "maturityDate"),
 			OpenInterest:  utils.GetInt64(raw, "openInterest"),
-		}
-		futures = append(futures, future)
+		})
 	}
 
 	return futures, nil

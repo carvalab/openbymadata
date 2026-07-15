@@ -101,11 +101,21 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 
 **📈 Historical Data:** Time series data for charting
 ```go
-// Last 30 days
+// Last 30 days (daily)
 historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
 
-// Custom date range
-weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+// Custom date range with a typed resolution
+weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, from, to)
+
+// Intraday bars (1 minute by default; also 5 / 60)
+bars, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution1Min, from, to)
+```
+
+**💲 Direct quotes and market hours:**
+```go
+quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+mt, err := client.GetMarketTime(ctx)
+fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
 
 **💾 Smart Caching:** 100x speed improvement, 95% API call reduction

@@ -103,11 +103,21 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 
 **📈 Datos Históricos:** Series temporales para gráficos
 ```go
-// Últimos 30 días
+// Últimos 30 días (diario)
 historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
 
-// Rango personalizado
-weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+// Rango personalizado con resolución tipada
+weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, from, to)
+
+// Barras intradía (1 minuto por defecto, también 5 / 60)
+bars, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution1Min, from, to)
+```
+
+**💲 Cotización directa y horario del mercado:**
+```go
+quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+mt, err := client.GetMarketTime(ctx)
+fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
 
 **💾 Caché Inteligente:** Mejora de 100x en velocidad, reducción del 95% en llamadas a la API

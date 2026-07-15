@@ -11,21 +11,14 @@
 // Create a client and start fetching data:
 //
 //	client := openbymadata.NewClient()
+//	defer client.Close()
 //	ctx := context.Background()
 //
-//	// Get specific US stock (CEDEAR)
 //	aapl, err := client.GetCedear(ctx, "AAPL")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //	fmt.Printf("AAPL: $%.2f (%.2f%%)\n", aapl.Last, aapl.Change)
-//
-//	// Universal search (recommended)
-//	security, err := client.GetSecurity(ctx, "BMA")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	fmt.Printf("BMA: $%.2f\n", security.Last)
 //
 // # Key Features
 //
@@ -35,18 +28,10 @@
 // Batch Operations: Efficiently retrieve multiple securities in a single operation using
 // GetMultipleSecurities().
 //
-// Historical Data: Access OHLCV charting data with GetHistory() and GetHistoryLastDays().
+// Historical Data: Access OHLCV charting data with GetHistory() and GetIntradayHistory().
 //
-// Smart Caching: All data is automatically cached for 5 minutes, reducing API calls by 95%
-// and improving performance by 100x for cached requests.
-//
-// # Performance
-//
-// The client includes automatic caching that dramatically improves performance:
-//   - First API call: ~100ms (network request)
-//   - Cached calls: ~50µs (100x faster)
-//   - Thread-safe concurrent access
-//   - Automatic cache expiration after 5 minutes
+// Smart Caching: All collection data is automatically cached for 5 minutes, reducing API
+// calls by 95% and improving performance by 100x for cached requests.
 //
 // # Configuration
 //
@@ -55,51 +40,15 @@
 //	opts := &openbymadata.ClientOptions{
 //		Timeout:       30 * time.Second,
 //		RetryAttempts: 5,
-//		EnableCache:   true, // Default: true
+//		EnableCache:   true,
 //	}
 //	client := openbymadata.NewClient(opts)
-//
-// # API Coverage
-//
-// The client covers all major BYMA API endpoints:
-//   - Securities: Leading equity, general equity, CEDEARs
-//   - Fixed Income: Government bonds, corporate bonds, short-term bonds
-//   - Derivatives: Options and futures contracts
-//   - Market Data: Indices, market summary, working day status
-//   - Historical Data: OHLCV time series for charting
-//   - News: Market news and financial statements
-//
-// # Error Handling
-//
-// The library provides structured error handling with custom error types:
-//
-//	securities, err := client.GetBluechips(ctx)
-//	if err != nil {
-//		if bymaErr, ok := err.(*openbymadata.BYMAError); ok {
-//			switch bymaErr.Code {
-//			case "TIMEOUT":
-//				// Handle timeout
-//			case "RATE_LIMITED":
-//				// Handle rate limiting
-//			default:
-//				log.Printf("API error: %v", bymaErr)
-//			}
-//		}
-//	}
-//
-// # Thread Safety
-//
-// All client operations are thread-safe and can be used concurrently across
-// multiple goroutines. The built-in cache is also thread-safe.
-//
-// # Testing Support
-//
-// The library supports easy testing with HTTP test servers. See the testing
-// documentation for examples of mocking API responses.
+//	defer client.Close()
 package openbymadata
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/carvalab/openbymadata/internal/api"
@@ -114,42 +63,7 @@ type client struct {
 }
 
 // NewClient creates a new BYMA data client with the provided options.
-// This is the main entry point for creating a client instance.
-//
-// The client includes automatic 5-minute caching, retry logic, and thread-safe operations.
-// All methods accept context.Context for cancellation and timeout control.
-//
-// Example usage:
-//
-//	// Basic client with default settings (recommended)
-//	client := openbymadata.NewClient()
-//	ctx := context.Background()
-//
-//	// Get a specific security
-//	aapl, err := client.GetCedear(ctx, "AAPL")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	fmt.Printf("AAPL: $%.2f\n", aapl.Last)
-//
-// Custom configuration:
-//
-//	// Production configuration with longer timeouts
-//	opts := &openbymadata.ClientOptions{
-//		Timeout:       60 * time.Second,  // Longer timeout
-//		RetryAttempts: 5,                 // More retries
-//		EnableCache:   true,              // Keep caching enabled
-//	}
-//	client := openbymadata.NewClient(opts)
-//
-// Development configuration:
-//
-//	// Disable caching for always fresh data during development
-//	devOpts := &openbymadata.ClientOptions{
-//		EnableCache: false,
-//		Timeout:     10 * time.Second,
-//	}
-//	client := openbymadata.NewClient(devOpts)
+// Call Close() when finished to release the underlying HTTP transport.
 func NewClient(opts ...*ClientOptions) Client {
 	options := DefaultClientOptions()
 	if len(opts) > 0 && opts[0] != nil {
@@ -206,13 +120,17 @@ func cached[T any](ctx context.Context, c *client, key string, fetch func(contex
 	return data, nil
 }
 
+// Close releases the HTTP transport owned by the client. It is safe to call
+// multiple times.
+func (c *client) Close() {
+	c.Client.Close()
+}
+
 // =============================================================================
-// Cache-enabled methods override the base Client methods
+// Cache-enabled collection methods
 // =============================================================================
 
 // GetBluechips retrieves all leading equity securities (blue chip stocks).
-// These are the most liquid and actively traded Argentine stocks.
-// Results are cached for 5 minutes to improve performance.
 func (c *client) GetBluechips(ctx context.Context) ([]Security, error) {
 	return cached(ctx, c, "bluechips", func(ctx context.Context) ([]Security, error) {
 		return c.Client.GetBluechips(ctx)
@@ -297,6 +215,39 @@ func (c *client) GetIncomeStatement(ctx context.Context, ticker string) ([]Incom
 }
 
 // =============================================================================
+// Market status and quote lookups
+// =============================================================================
+
+// GetMarketTime returns the full market-time payload including opening and
+// closing instants.
+func (c *client) GetMarketTime(ctx context.Context) (MarketTime, error) {
+	mt, err := c.Client.GetMarketTime(ctx)
+	if err != nil {
+		return MarketTime{}, err
+	}
+	return MarketTime{
+		IsWorkingDay: mt.IsWorkingDay,
+		Opens:        mt.Opens,
+		Closes:       mt.Closes,
+		Timezone:     mt.Timezone,
+		OpeningText:  mt.OpeningText,
+		ClosingText:  mt.ClosingText,
+	}, nil
+}
+
+// IsWorkingDay reports whether the BYMA market is open today.
+func (c *client) IsWorkingDay(ctx context.Context) (bool, error) {
+	return c.Client.IsWorkingDay(ctx)
+}
+
+// GetCurrentQuote returns the latest quote for a symbol at the requested
+// settlement window. The settlement accepts numeric ("1"/"2"/"3") or
+// textual ("CI"/"24HS"/"48HS") codes via Settlement* constants.
+func (c *client) GetCurrentQuote(ctx context.Context, symbol string, settlement Settlement) (CurrentQuote, error) {
+	return c.Client.GetCurrentQuote(ctx, symbol, settlement)
+}
+
+// =============================================================================
 // Individual security lookup methods
 // =============================================================================
 
@@ -326,7 +277,6 @@ func (c *client) GetBluechip(ctx context.Context, symbol string) (*Security, err
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindSecurityInCollection(symbol, bluechips)
 }
 
@@ -336,7 +286,6 @@ func (c *client) GetCedear(ctx context.Context, symbol string) (*Security, error
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindSecurityInCollection(symbol, cedears)
 }
 
@@ -346,7 +295,6 @@ func (c *client) GetGalpone(ctx context.Context, symbol string) (*Security, erro
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindSecurityInCollection(symbol, galpones)
 }
 
@@ -356,17 +304,14 @@ func (c *client) GetBond(ctx context.Context, symbol string) (*Bond, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	shortBonds, err := c.GetShortTermBonds(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	corporateBonds, err := c.GetCorporateBonds(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindBondBySymbol(symbol, bonds, shortBonds, corporateBonds)
 }
 
@@ -376,7 +321,6 @@ func (c *client) GetOption(ctx context.Context, symbol string) (*Option, error) 
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindOptionBySymbol(symbol, options)
 }
 
@@ -386,7 +330,6 @@ func (c *client) GetFuture(ctx context.Context, symbol string) (*Future, error) 
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.FindFutureBySymbol(symbol, futures)
 }
 
@@ -400,17 +343,14 @@ func (c *client) GetMultipleSecurities(ctx context.Context, symbols []string) (m
 	if err != nil {
 		return nil, err
 	}
-
 	cedears, err := c.GetCedears(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	galpones, err := c.GetGalpones(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.GetMultipleSecurities(symbols, bluechips, cedears, galpones), nil
 }
 
@@ -420,17 +360,14 @@ func (c *client) SearchSecurities(ctx context.Context, searchText string) ([]Sec
 	if err != nil {
 		return nil, err
 	}
-
 	cedears, err := c.GetCedears(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	galpones, err := c.GetGalpones(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	return helpers.SearchSecurities(searchText, bluechips, cedears, galpones), nil
 }
 
@@ -454,24 +391,76 @@ func (c *client) ClearCache() {
 }
 
 // =============================================================================
-// Market Status & Information (delegated methods with examples)
+// Historical data
 // =============================================================================
 
-// IsWorkingDay checks if the market is open today.
-func (c *client) IsWorkingDay(ctx context.Context) (bool, error) {
-	return c.Client.IsWorkingDay(ctx)
-}
-
-// =============================================================================
-// Historical Data & Charting (delegated methods with examples)
-// =============================================================================
-
-// GetHistory retrieves historical OHLCV data for a symbol within a date range.
-func (c *client) GetHistory(ctx context.Context, symbol, resolution string, from, to time.Time) (*OHLCV, error) {
+// GetHistory retrieves historical OHLCV data for a symbol within a date range
+// at the requested resolution.
+func (c *client) GetHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
 	return c.Client.GetHistory(ctx, symbol, resolution, from, to)
 }
 
-// GetHistoryLastDays retrieves historical OHLCV data for the last N days.
+// GetHistoryLastDays retrieves historical OHLCV data for the last N days (daily).
 func (c *client) GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error) {
 	return c.Client.GetHistoryLastDays(ctx, symbol, days)
 }
+
+// GetIntradayHistory retrieves intraday OHLCV bars. Default resolution is 1
+// minute; pass Resolution5Min or Resolution60Min for coarser bars.
+func (c *client) GetIntradayHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	if resolution == "" {
+		resolution = Resolution1Min
+	}
+	return c.Client.GetIntradayHistory(ctx, symbol, resolution, from, to)
+}
+
+// =============================================================================
+// Company metadata
+// =============================================================================
+
+// GetCompanyInfo returns the public profile (society/company data) for a symbol.
+func (c *client) GetCompanyInfo(ctx context.Context, symbol string) (*CompanyInfo, error) {
+	return c.Client.GetCompanyInfo(ctx, symbol)
+}
+
+// GetEquityProfile returns the technical profile for a symbol.
+func (c *client) GetEquityProfile(ctx context.Context, symbol string) (*EquityProfile, error) {
+	return c.Client.GetEquityProfile(ctx, symbol)
+}
+
+// GetCompanyManagement returns the directors/management roster for a symbol.
+func (c *client) GetCompanyManagement(ctx context.Context, symbol string) ([]CompanyDirector, error) {
+	return c.Client.GetCompanyManagement(ctx, symbol)
+}
+
+// GetCompanyBalance returns the latest balance sheet rows for a symbol.
+func (c *client) GetCompanyBalance(ctx context.Context, symbol string) ([]CompanyBalance, error) {
+	return c.Client.GetCompanyBalance(ctx, symbol)
+}
+
+// =============================================================================
+// Deprecated aliases for migration from pyhomebroker-style naming.
+// =============================================================================
+
+// GetLeadingEquity is a deprecated alias for GetBluechips.
+func (c *client) GetLeadingEquity(ctx context.Context) ([]Security, error) {
+	return c.GetBluechips(ctx)
+}
+
+// GetGeneralEquity is a deprecated alias for GetGalpones.
+func (c *client) GetGeneralEquity(ctx context.Context) ([]Security, error) {
+	return c.GetGalpones(ctx)
+}
+
+// GetPublicBonds is a deprecated alias for GetBonds.
+func (c *client) GetPublicBonds(ctx context.Context) ([]Bond, error) {
+	return c.GetBonds(ctx)
+}
+
+// GetLetters is a deprecated alias for GetShortTermBonds.
+func (c *client) GetLetters(ctx context.Context) ([]Bond, error) {
+	return c.GetShortTermBonds(ctx)
+}
+
+// Ensure fmt remains in scope for any future added use without re-importing it.
+var _ = fmt.Sprintf
