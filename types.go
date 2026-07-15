@@ -54,7 +54,6 @@ type Client interface {
 	// Historical Data
 	GetHistory(ctx context.Context, symbol, resolution string, from, to time.Time) (*OHLCV, error)
 	GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error)
-	ConvertToHistoricalData(slices *OHLCV) ([]HistoricalData, error)
 
 	// Cache management
 	GetCacheInfo() map[string]interface{}
@@ -65,26 +64,11 @@ type Client interface {
 // Supporting Interfaces
 // =============================================================================
 
-// HTTPClient defines the interface for HTTP operations
-type HTTPClient interface {
-	Get(url string) (*HTTPResponse, error)
-	Post(url string, data []byte) (*HTTPResponse, error)
-}
-
 // Logger defines the interface for logging operations
-type Logger interface {
-	Debug(msg string, fields ...LogField)
-	Info(msg string, fields ...LogField)
-	Warn(msg string, fields ...LogField)
-	Error(msg string, fields ...LogField)
-}
+type Logger = api.Logger
 
-// ConfigProvider defines the interface for configuration
-type ConfigProvider interface {
-	GetTimeout() time.Duration
-	GetRetryAttempts() int
-	GetBaseURL() string
-}
+// LogField represents a structured log field
+type LogField = api.LogField
 
 // =============================================================================
 // Data Models (Type Aliases)
@@ -100,7 +84,6 @@ type (
 	MarketSummary   = api.MarketSummary
 	News            = api.News
 	IncomeStatement = api.IncomeStatement
-	HistoricalData  = api.HistoricalData
 	OHLCV           = api.OHLCV
 )
 
@@ -108,38 +91,12 @@ type (
 // Configuration Types
 // =============================================================================
 
-// HTTPResponse represents an HTTP response
-type HTTPResponse struct {
-	Body       []byte
-	StatusCode int
-	Headers    map[string]string
-}
-
-// LogField represents a structured log field
-type LogField struct {
-	Key   string
-	Value interface{}
-}
-
-// APIResponse represents a generic API response wrapper
-type APIResponse struct {
-	Data    interface{} `json:"data"`
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-}
-
-// MarketTimeResponse represents the market time API response
-type MarketTimeResponse struct {
-	IsWorkingDay bool `json:"isWorkingDay"`
-}
-
 // ClientOptions represents configuration options for the client
 type ClientOptions struct {
 	BaseURL       string
 	Timeout       time.Duration
 	RetryAttempts int
 	Logger        Logger
-	HTTPClient    HTTPClient
 	EnableCache   bool // Enable 5-minute caching (default: true)
 }
 
@@ -150,8 +107,7 @@ func DefaultClientOptions() *ClientOptions {
 		Timeout:       30 * time.Second,
 		RetryAttempts: 3,
 		Logger:        &NoOpLogger{},
-		HTTPClient:    nil,  // Will be created by client
-		EnableCache:   true, // Cache enabled by default
+		EnableCache:   true,
 	}
 }
 

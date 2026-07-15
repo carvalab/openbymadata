@@ -303,21 +303,7 @@ func main() {
 		}
 	}
 
-	// Example: Convert OHLCV slices to HistoricalData format if needed
-	fmt.Printf("\n🔄 Converting to HistoricalData format (if needed):\n")
-	if historyData != nil && len(historyData.Time) > 0 {
-		structuredData, err := client.ConvertToHistoricalData(historyData)
-		if err != nil {
-			log.Printf("Error converting to structured format: %v", err)
-		} else {
-			fmt.Printf("   Converted %d OHLCV data points to HistoricalData structs\n", len(structuredData))
-			if len(structuredData) > 0 {
-				first := structuredData[0]
-				date := first.Time.Format("2006-01-02")
-				fmt.Printf("   First point (%s): $%.2f\n", date, first.Close)
-			}
-		}
-	}
+	// OHLCV is the historical-data shape returned by GetHistoryLastDays / GetHistory.
 
 	// =============================================================================
 	// 8. News & Financial Data

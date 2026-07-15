@@ -34,9 +34,6 @@ func (c *Client) getSecurities(ctx context.Context, endpoint string) ([]Security
 		return nil, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse(endpoint, respData)
-
 	var rawSecurities []map[string]interface{}
 	// CEDEARs return data directly, others return wrapped in 'data'
 	if endpoint == "cedears" {

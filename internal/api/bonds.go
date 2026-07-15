@@ -34,9 +34,6 @@ func (c *Client) getFixedIncome(ctx context.Context, endpoint string) ([]Bond, e
 		return nil, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse(endpoint, respData)
-
 	var rawBonds []map[string]interface{}
 	// public-bonds and lebacs return data wrapped, negociable-obligations return direct
 	if endpoint == "public-bonds" || endpoint == "lebacs" {

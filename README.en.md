@@ -34,7 +34,7 @@ Provides strongly-typed, concurrent-safe access to Argentine financial market da
 ## Installation
 
 ```bash
-go get github.com/pablocarvajal/openbymadata
+go get github.com/carvalab/openbymadata
 ```
 
 ## Quick Start
@@ -239,10 +239,6 @@ Market Indices (15):
    AAPL Weekly Data - 13 weeks retrieved
    Latest week (2024-03-15): Close=$182.31
 
-🔄 Converting to HistoricalData format (if needed):
-   Converted 21 OHLCV data points to HistoricalData structs
-   First point (2024-02-15): $485.22
-
 📰 8. News & Financial Data
 ------------------------------
 📰 Latest News (24 items):
@@ -357,12 +353,6 @@ weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
 for i := range len(historyData.Time) {
     fmt.Printf("%s: Close=$%.2f, Volume=%d\n", 
         historyData.Time[i].Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
-}
-
-// Optional: Convert to structured format if needed
-structuredData, err := client.ConvertToHistoricalData(historyData)
-for _, candle := range structuredData {
-    fmt.Printf("%s: Close=$%.2f\n", candle.Time.Format("2006-01-02"), candle.Close)
 }
 ```
 

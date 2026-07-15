@@ -15,9 +15,6 @@ func (c *Client) GetNews(ctx context.Context) ([]News, error) {
 		return nil, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse("bnown/byma-ads", respData)
-
 	var rawNews []map[string]interface{}
 	if err := c.parseAPIResponse(respData, &rawNews); err != nil {
 		return nil, err
@@ -45,9 +42,6 @@ func (c *Client) GetIncomeStatement(ctx context.Context, ticker string) ([]Incom
 	if err != nil {
 		return nil, err
 	}
-
-	// Debug: log raw response
-	c.debugLogResponse("bnown/seriesHistoricas/balances", respData)
 
 	var rawStatements []map[string]interface{}
 	if err := c.parseAPIResponse(respData, &rawStatements); err != nil {

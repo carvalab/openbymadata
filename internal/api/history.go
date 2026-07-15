@@ -15,18 +15,14 @@ import (
 // from: Start date as time.Time
 // to: End date as time.Time
 func (c *Client) GetHistory(ctx context.Context, symbol, resolution string, from, to time.Time) (*OHLCV, error) {
-	// Always ensure "24HS" suffix is needed for the api
 	symbol = symbol + " 24HS"
 
-	// Convert time.Time to Unix timestamps
 	fromUnix := from.Unix()
 	toUnix := to.Unix()
 
-	// Build URL with query parameters
 	endpoint := "chart/historical-series/history"
 	baseURL := c.buildURL(endpoint)
 
-	// Add query parameters
 	params := url.Values{}
 	params.Add("symbol", symbol)
 	params.Add("resolution", resolution)
@@ -39,8 +35,6 @@ func (c *Client) GetHistory(ctx context.Context, symbol, resolution string, from
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history data: %w", err)
 	}
-
-	c.debugLogResponse("chart/historical-series/history", respData)
 
 	var historyResp HistoryResponse
 	if err := json.Unmarshal(respData, &historyResp); err != nil {
@@ -63,36 +57,10 @@ func (c *Client) GetHistory(ctx context.Context, symbol, resolution string, from
 
 // GetHistoryLastDays is a convenience method to get history for the last N days
 func (c *Client) GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error) {
-	// Calculate dates
 	to := time.Now()
-	from := to.AddDate(0, 0, -days) // Go back N days
+	from := to.AddDate(0, 0, -days)
 
 	return c.GetHistory(ctx, symbol, "D", from, to)
-}
-
-// ConvertToHistoricalData converts OHLCV to HistoricalData array (utility function)
-func (c *Client) ConvertToHistoricalData(slices *OHLCV) ([]HistoricalData, error) {
-	// Validate that all arrays have the same length
-	length := len(slices.Time)
-	if len(slices.Close) != length || len(slices.Open) != length ||
-		len(slices.High) != length || len(slices.Low) != length || len(slices.Volume) != length {
-		return nil, fmt.Errorf("inconsistent array lengths in OHLCV slices")
-	}
-
-	// Convert to structured format
-	data := make([]HistoricalData, length)
-	for i := range length {
-		data[i] = HistoricalData{
-			Time:   slices.Time[i],
-			Open:   slices.Open[i],
-			High:   slices.High[i],
-			Low:    slices.Low[i],
-			Close:  slices.Close[i],
-			Volume: slices.Volume[i],
-		}
-	}
-
-	return data, nil
 }
 
 // OHLCV represents historical data as separate slices

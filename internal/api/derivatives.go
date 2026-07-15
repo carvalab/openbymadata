@@ -18,9 +18,6 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 		return nil, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse("options", respData)
-
 	var rawOptions []map[string]interface{}
 	if err := json.Unmarshal(respData, &rawOptions); err != nil {
 		return nil, fmt.Errorf("invalid response: %w", err)
@@ -63,9 +60,6 @@ func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Debug: log raw response
-	c.debugLogResponse("index-future", respData)
 
 	var rawFutures []map[string]interface{}
 	if err := c.parseAPIResponse(respData, &rawFutures); err != nil {

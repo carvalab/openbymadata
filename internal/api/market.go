@@ -16,13 +16,8 @@ func (c *Client) IsWorkingDay(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse("market-time", respData)
-
 	var response MarketTimeResponse
 	if err := json.Unmarshal(respData, &response); err != nil {
-		// If we can't parse the specific response, try to check if we got data back
-		// The presence of data usually indicates it's a working day
 		var rawData interface{}
 		if json.Unmarshal(respData, &rawData) == nil {
 			return true, nil
@@ -41,9 +36,6 @@ func (c *Client) GetIndices(ctx context.Context) ([]Index, error) {
 		return nil, err
 	}
 
-	// Debug: log raw response
-	c.debugLogResponse("index-price", respData)
-
 	var rawIndices []map[string]interface{}
 	if err := c.parseAPIResponse(respData, &rawIndices); err != nil {
 		return nil, err
@@ -52,7 +44,7 @@ func (c *Client) GetIndices(ctx context.Context) ([]Index, error) {
 	indices := make([]Index, 0, len(rawIndices))
 	for _, raw := range rawIndices {
 		index := Index{
-			Description:   c.applyDictionary(utils.GetString(raw, "description")),
+			Description:   utils.GetString(raw, "description"),
 			Symbol:        utils.GetString(raw, "symbol"),
 			Last:          utils.GetFloat64(raw, "price"),
 			Change:        utils.GetFloat64(raw, "variation"),
@@ -73,9 +65,6 @@ func (c *Client) MarketResume(ctx context.Context) ([]MarketSummary, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Debug: log raw response
-	c.debugLogResponse("total-negotiated", respData)
 
 	var rawSummaries []map[string]interface{}
 	if err := c.parseAPIResponse(respData, &rawSummaries); err != nil {
