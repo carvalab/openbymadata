@@ -102,18 +102,18 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 **📈 Historical Data:** Time series data for charting
 ```go
 // Last 30 days (daily)
-historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
 
 // Custom date range with a typed resolution
-weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, from, to)
+weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", openbymadata.ResolutionWeekly, from, to)
 
 // Intraday bars (1 minute by default; also 5 / 60)
-bars, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution1Min, from, to)
+bars, err := client.GetIntradayHistory(ctx, "GGAL 24HS", openbymadata.Resolution1Min, from, to)
 ```
 
 **💲 Direct quotes and market hours:**
 ```go
-quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement24HS)
 mt, err := client.GetMarketTime(ctx)
 fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
@@ -349,7 +349,7 @@ results, err := client.SearchSecurities(ctx, "APP")  // Finds symbols containing
 
 ```go
 // Get historical data for the last 30 days (automatically adds "24HS")
-historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
 
 // Get historical data with custom date range
 // Symbols are normalized automatically ("24HS" suffix added if not present)
@@ -357,7 +357,7 @@ historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
 // from/to are time.Time (automatic Unix conversion)
 from := time.Now().AddDate(0, -3, 0)  // 3 months ago
 to := time.Now()                      // now
-weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", "W", from, to)
 
 // Data returns OHLCV as separate slices (most efficient format)
 for i := range len(historyData.Time) {

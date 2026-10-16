@@ -104,18 +104,18 @@ securities, err := client.GetMultipleSecurities(ctx, watchlist)
 **📈 Datos Históricos:** Series temporales para gráficos
 ```go
 // Últimos 30 días (diario)
-historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
 
 // Rango personalizado con resolución tipada
-weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, from, to)
+weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", openbymadata.ResolutionWeekly, from, to)
 
 // Barras intradía (1 minuto por defecto, también 5 / 60)
-bars, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution1Min, from, to)
+bars, err := client.GetIntradayHistory(ctx, "GGAL 24HS", openbymadata.Resolution1Min, from, to)
 ```
 
 **💲 Cotización directa y horario del mercado:**
 ```go
-quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement24HS)
 mt, err := client.GetMarketTime(ctx)
 fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
@@ -351,7 +351,7 @@ results, err := client.SearchSecurities(ctx, "APP")  // Encuentra símbolos que 
 
 ```go
 // Obtener datos históricos para los últimos 30 días (automáticamente agrega "24HS")
-historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
 
 // Obtener datos históricos con rango de fechas personalizado
 // Símbolos se normalizan automáticamente (se agrega "24HS" si no está presente)
@@ -359,7 +359,7 @@ historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
 // from/to son time.Time (conversión a Unix automática)
 from := time.Now().AddDate(0, -3, 0)  // 3 meses atrás
 to := time.Now()                      // ahora
-weeklyData, err := client.GetHistory(ctx, "AAPL", "W", from, to)
+weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", "W", from, to)
 
 // Los datos retornan OHLCV como slices separados (formato más eficiente)
 for i := range len(historyData.Time) {

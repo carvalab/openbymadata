@@ -1,0 +1,35 @@
+name: Integration
+
+# Runs the suite against the live BYMA Open Data API to catch upstream changes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mon-Fri 17:00 UTC = 14:00 ART, while the market is open.
+    - cron: "0 17 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Live API
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Integration tests
+        env:
+          INTEGRATION_TEST: "true"
+        run: go test -tags integration -run Integration -count=1 -v ./...
