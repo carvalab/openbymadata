@@ -4,7 +4,6 @@
 [![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
 [![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
 [![Coverage](https://codecov.io/gh/carvalab/openbymadata/branch/main/graph/badge.svg)](https://app.codecov.io/gh/carvalab/openbymadata)
-[![Go Report Card](https://goreportcard.com/badge/github.com/carvalab/openbymadata)](https://goreportcard.com/report/github.com/carvalab/openbymadata)
 [![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
