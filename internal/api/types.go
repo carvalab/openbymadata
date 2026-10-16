@@ -22,7 +22,7 @@ type Security struct {
 	Operations    int64     `json:"operations"`
 	DateTime      time.Time `json:"datetime"`
 	Group         string    `json:"group"`
-	Currency      string    `json:"currency"` // denomination currency as sent by BYMA, e.g. "ARS" or "EXT"
+	Currency      string    `json:"currency"` // as sent by BYMA: "ARS", "USD", or "EXT" (seen on cable-dollar instruments)
 	Market        string    `json:"market"`   // "BYMA", or "SENEBI" for the non-guaranteed segment
 }
 
@@ -48,8 +48,9 @@ type Bond struct {
 	Group          string    `json:"group"`
 	Expiration     time.Time `json:"expiration"`
 	DaysToMaturity int64     `json:"days_to_maturity"`
-	Currency       string    `json:"currency"` // denomination currency as sent by BYMA, e.g. "ARS" or "EXT"
-	Market         string    `json:"market"`   // "BYMA", or "SENEBI" for the non-guaranteed segment
+	Underlying     string    `json:"underlying"` // repos ("PESOS", "DOLAR", "CABLE") and securities lending (the lent ticker)
+	Currency       string    `json:"currency"`   // as sent by BYMA: "ARS", "USD", or "EXT" (seen on cable-dollar instruments)
+	Market         string    `json:"market"`     // "BYMA", or "SENEBI" for the non-guaranteed segment
 }
 
 // Option represents an options contract
@@ -208,13 +209,14 @@ type CompanyBalance struct {
 
 // HistoryResponse represents the response structure for historical data
 type HistoryResponse struct {
-	Status string    `json:"s"` // Status: "ok" or "no_data"
-	Time   []int64   `json:"t"` // Array of timestamps
-	Close  []float64 `json:"c"` // Array of closing prices
-	Open   []float64 `json:"o"` // Array of opening prices
-	High   []float64 `json:"h"` // Array of high prices
-	Low    []float64 `json:"l"` // Array of low prices
-	Volume []int64   `json:"v"` // Array of volumes
+	Status string    `json:"s"`      // Status: "ok", "no_data" or "error"
+	ErrMsg string    `json:"errmsg"` // set when Status is "error"
+	Time   []int64   `json:"t"`      // Array of timestamps
+	Close  []float64 `json:"c"`      // Array of closing prices
+	Open   []float64 `json:"o"`      // Array of opening prices
+	High   []float64 `json:"h"`      // Array of high prices
+	Low    []float64 `json:"l"`      // Array of low prices
+	Volume []int64   `json:"v"`      // Array of volumes
 }
 
 // BondIndex is a BYMA fixed-income index, such as short-term dollar bonds.
@@ -255,6 +257,14 @@ type MarketResponsible struct {
 	Position        string    `json:"position"`
 	CompanyPosition string    `json:"company_position"`
 	Since           time.Time `json:"since"`
+}
+
+// CatalogInstrument is one entry of BYMA's full instrument list.
+type CatalogInstrument struct {
+	ID      int64  `json:"id"`
+	Code    string `json:"code"` // ticker, e.g. "GGAL" or "AL30D.SB"
+	Kind    string `json:"kind"` // "BONDINSTRUMENT" or "EQUITYINSTRUMENT"
+	Deleted bool   `json:"deleted"`
 }
 
 // InstrumentMatch is a symbol search result.

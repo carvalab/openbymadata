@@ -15,7 +15,7 @@ func (c *Client) GetCurrentQuote(ctx context.Context, symbol string, settlement 
 	}
 
 	payload := fmt.Sprintf(`{"symbol":%q,"settlementType":%q,"Content-Type":"application/json"}`, symbol, settlement)
-	respData, err := c.post(c.buildURL(pathCurrentQuote), []byte(payload))
+	respData, err := c.post(ctx, c.buildURL(pathCurrentQuote), []byte(payload))
 	if err != nil {
 		return CurrentQuote{}, err
 	}

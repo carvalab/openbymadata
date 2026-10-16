@@ -1,4 +1,4 @@
-# OpenBYMAData Go Library
+# openbymadata
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/carvalab/openbymadata.svg)](https://pkg.go.dev/github.com/carvalab/openbymadata)
 [![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
@@ -9,693 +9,248 @@
 
 > 🇦🇷 **Español:** [Leer el README en español →](README.md)
 
-A comprehensive Go library for accessing financial data from the Buenos Aires Stock Exchange (BYMA - Bolsas y Mercados Argentinos) through their free public API.
+Go client for [BYMA Open Data](https://open.bymadata.com.ar), the free market
+data API of the Buenos Aires stock exchange. Stocks, CEDEARs, ETFs, bonds,
+repos, options, futures, indices, the MEP dollar, live quotes and OHLCV
+history, as typed Go structs. No API key, no dependencies.
 
-Provides strongly-typed, concurrent-safe access to Argentine financial market data with built-in caching and performance optimizations.
+The **Live API** badge is a test suite that runs against the real API every
+weekday, so you know whether BYMA changed something before your users do.
 
-## Features
-
-### 🚀 **Performance & Design**
-- **5-Minute Smart Caching**: Repeated calls are served from memory instead of hitting the API again
-- **Individual Ticker Lookups**: Get specific securities without fetching entire collections
-- **Batch Operations**: Efficiently retrieve multiple securities in a single operation
-- **Strongly Typed**: No more generic `interface{}` - proper structs for each financial instrument
-- **Concurrent Safe**: Safe for use across multiple goroutines with thread-safe caching
-- **Context Aware**: All methods accept `context.Context` for cancellation and timeouts
-- **Retry Logic**: Built-in exponential backoff for resilient API calls
-- **Comprehensive Error Handling**: Custom error types with retry logic
-
-### 📊 **Market Data Coverage**
-- **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs, ETFs
-- **Fixed Income**: Government and corporate bonds, Letras, green/social/sustainability bonds, SENEBI segment, bond indices, coupon schedules
-- **Derivatives**: Options contracts, futures
-- **Historical Data**: Time series with OHLCV (Open, High, Low, Close, Volume) for charting
-- **Market Data**: Indices and their history (Merval), MEP dollar, top movers, symbol search, market summary, working day status
-- **News & Financials**: Market news, income statements
-
-> **Note**: "Securities" is a generic financial term in our Go code, but the actual BYMA API endpoints are: `leading-equity`, `general-equity`, and `cedears`
-
-### 🧪 **Testing & Reliability**
-- **Comprehensive Test Suite**: HTTP test servers for reliable testing
-- **Benchmarks**: Performance testing included
-- **Examples**: Extensive documentation with runnable examples
-
-## Installation
+## Install
 
 ```bash
 go get github.com/carvalab/openbymadata
 ```
 
-## Quick Start
+Requires Go 1.26 or newer.
 
-📖 **Complete documentation with examples is available directly in the code and on [pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata)**
-
-### Installation
-
-```bash
-go get github.com/carvalab/openbymadata
-```
-
-### Basic Example
+## Quick start
 
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
+	"context"
+	"fmt"
+	"log"
 
-    "github.com/carvalab/openbymadata"
+	"github.com/carvalab/openbymadata"
 )
 
 func main() {
-    // Create client (5-minute caching enabled by default)
-    client := openbymadata.NewClient()
-    ctx := context.Background()
+	client := openbymadata.NewClient() // 5-minute cache on by default
+	defer client.Close()
+	ctx := context.Background()
 
-    // Get specific US stock (CEDEAR)
-    aapl, err := client.GetCedear(ctx, "AAPL")
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("🍎 AAPL: $%.2f (%.2f%%)\n", aapl.Last, aapl.Change)
+	open, err := client.IsMarketOpen(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("market open:", open)
 
-    // Universal search (recommended)
-    security, err := client.GetSecurity(ctx, "BMA")
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("🔍 BMA: $%.2f\n", security.Last)
+	ggal, err := client.GetBluechip(ctx, "GGAL")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("GGAL %.2f (%+.2f%%)\n", ggal.Last, ggal.Change*100)
+
+	// History needs a settlement suffix: "GGAL 24HS", not "GGAL".
+	bars, err := client.GetHistoryLastDays(ctx, "GGAL 24HS", 30)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("daily bars:", len(bars.Time))
+
+	mep, err := client.GetMEPIndices(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("MEP dollar: %.2f\n", mep[0].Last)
 }
 ```
 
-### Key Features
+Runnable examples for each method are on
+[pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata#pkg-examples),
+and `go run ./cmd/example` walks through most of the API.
 
-**🎯 Individual Ticker Lookups:** Get specific securities without fetching entire collections
+## Things to know
+
+- **History symbols need a settlement suffix.** `GetHistory`,
+  `GetHistoryLastDays` and `GetIntradayHistory` take `"GGAL 24HS"`. A bare
+  `"GGAL"` returns an empty result, not an error.
+- **Use `Settlement24HS` or `SettlementCI` for quotes.** Argentina settles
+  T+1, so `Settlement48HS` no longer returns prices.
+- **Open vs working day.** `IsMarketOpen` is true only while BYMA is trading
+  right now. `IsWorkingDay` says whether today is a trading day.
+  `GetMarketTime` gives today's opening and closing times (UTC-3).
+- **`Change` is a fraction.** `0.0123` means +1.23%.
+- **Repos and securities lending prices are rates** as BYMA publishes them,
+  and the scale differs between fields. Compare like with like.
+- **Intraday data is delayed** on the free API: a few bars per day.
+- **`GetCompanyBalance` doesn't work** on the free API anymore; BYMA moved it
+  behind a login. Use `GetIncomeStatement` for the filed statement PDFs.
+
+## API at a glance
+
+Market-wide lists are cached for 5 minutes (see [Caching](#caching)).
+Per-symbol calls, quotes, history and market status always hit the API.
+
+**Market status and indices**
+
+| Method | Returns |
+|---|---|
+| `IsMarketOpen(ctx)` | whether BYMA is trading right now |
+| `IsWorkingDay(ctx)` | whether today is a trading day |
+| `GetMarketTime(ctx)` | today's opening and closing times |
+| `GetServerTime(ctx)` | BYMA's clock (UTC-3) |
+| `GetIndices(ctx)` | index levels (Merval is `"M"`) |
+| `GetIndexHistory(ctx, symbol, res, from, to)` | index OHLCV |
+| `GetMEPIndices(ctx)` | MEP dollar indices |
+| `MarketResume(ctx)` | traded totals |
+| `GetTopMovers(ctx)` | stocks, bonds and options from BYMA's ups/downs panel |
+
+**Equities**
+
+| Method | Returns |
+|---|---|
+| `GetBluechips(ctx)` | leading panel (panel líder) |
+| `GetGalpones(ctx)` | general panel |
+| `GetCedears(ctx)` | CEDEARs |
+| `GetETFs(ctx)` | ETFs |
+| `GetCorporateGovernance(ctx)`, `GetCorporateGovernancePlus(ctx)` | governance panels |
+
+**Fixed income and money market**
+
+| Method | Returns |
+|---|---|
+| `GetBonds(ctx)` | government bonds |
+| `GetShortTermBonds(ctx)` | Letras |
+| `GetCorporateBonds(ctx)` | obligaciones negociables |
+| `GetGreenBonds`, `GetSocialBonds`, `GetSustainabilityBonds`, `GetLinkedBonds` | labelled bonds |
+| `GetSenebiBonds`, `GetSenebiLetters`, `GetSenebiCorporateBonds` | SENEBI segment (`.SB` symbols) |
+| `GetFinancialTrusts(ctx)` | fideicomisos financieros |
+| `GetRepos(ctx)` | cauciones (repos) |
+| `GetSecuritiesLending(ctx)` | securities lending |
+| `GetBondIndices(ctx)` | fixed-income indices |
+| `GetBondCoupons(ctx, symbol)` | a bond's interest and amortization schedule |
+
+**Derivatives**
+
+| Method | Returns |
+|---|---|
+| `GetOptions(ctx)` | options, with `OptionType` CALL/PUT |
+| `GetFutures(ctx)` | futures (often empty on the free API) |
+
+**Quotes and history**
+
+| Method | Returns |
+|---|---|
+| `GetCurrentQuote(ctx, symbol, settlement)` | live bid/ask/last |
+| `GetHistory(ctx, symbol, res, from, to)` | OHLCV (daily, weekly, monthly or intraday resolutions) |
+| `GetHistoryLastDays(ctx, symbol, days)` | daily OHLCV up to now |
+| `GetIntradayHistory(ctx, symbol, res, from, to)` | 1, 5 or 60-minute bars |
+
+**Lookups and search**
+
+| Method | Returns |
+|---|---|
+| `GetSecurity(ctx, symbol)` | a stock or CEDEAR from any equity panel |
+| `GetBluechip`, `GetCedear`, `GetGalpone`, `GetBond`, `GetOption`, `GetFuture` | one instrument by symbol |
+| `GetMultipleSecurities(ctx, symbols)` | several equities at once |
+| `SearchSecurities(ctx, text)` | equities whose symbol contains text |
+| `SearchInstruments(ctx, query)` | any instrument by symbol or name, up to 10 |
+| `GetInstrumentCatalog(ctx)` | every listed instrument (about 11,000) |
+
+**Companies and filings**
+
+| Method | Returns |
+|---|---|
+| `GetCompanyInfo(ctx, symbol)` | company profile fields |
+| `GetEquityProfile(ctx, symbol)` | security profile (ISIN, par value, ...) |
+| `GetCompanyManagement(ctx, symbol)` | directors |
+| `GetMarketResponsibles(ctx, symbol)` | market representatives |
+| `GetIncomeStatement(ctx, symbol)` | filed statements with PDF links |
+| `GetNews(ctx)` | BYMA notices with PDF links |
+
+Field-by-field docs for every type are on
+[pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata).
+
+## Configuration
+
 ```go
-// Universal search (works for any security type)
-security, err := client.GetSecurity(ctx, "AAPL")
-
-// Specific types
-aapl, err := client.GetCedear(ctx, "AAPL")          // US stocks (CEDEARs)
-ggal, err := client.GetBluechip(ctx, "GGAL")        // Argentine blue chips
-```
-
-**⚡ Batch Operations:** Multiple securities in a single operation
-```go
-watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
-securities, err := client.GetMultipleSecurities(ctx, watchlist)
-```
-
-**📈 Historical Data:** Time series data for charting
-```go
-// Last 30 days (daily)
-historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
-
-// Custom date range with a typed resolution
-weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", openbymadata.ResolutionWeekly, from, to)
-
-// Intraday bars (1 minute by default; also 5 / 60)
-bars, err := client.GetIntradayHistory(ctx, "GGAL 24HS", openbymadata.Resolution1Min, from, to)
-```
-
-**💲 Direct quotes and market hours:**
-```go
-quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement24HS)
-mt, err := client.GetMarketTime(ctx)
-fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
-```
-
-**💾 Smart Caching:** repeated calls within 5 minutes are answered from memory
-
-### Traditional Collection-Based Access
-
-```go
-// Get all blue chip securities (cached for 5 minutes)
-bluechips, err := client.GetBluechips(ctx)
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Printf("Found %d blue chip securities:\n", len(bluechips))
-for _, security := range bluechips[:5] { // Show first 5
-    fmt.Printf("  %s: $%.2f (%.2f%%)\n", 
-        security.Symbol, security.Last, security.Change)
-}
-```
-
-### Custom Configuration
-
-```go
-// Create client with custom options
-opts := &openbymadata.ClientOptions{
-    Timeout:       30 * time.Second,
-    RetryAttempts: 5,
-    Logger:        customLogger, // Your logger implementation
-}
-
+opts := openbymadata.DefaultClientOptions() // cache on, 30s timeout, 3 retries
+opts.Timeout = 10 * time.Second
+opts.Logger = myLogger // anything with Debug/Info/Warn/Error
 client := openbymadata.NewClient(opts)
 ```
 
-## Running Examples
+When you build `ClientOptions` yourself, set `EnableCache: true` if you want
+caching; the zero value turns it off.
 
-The library includes comprehensive examples that demonstrate all features:
+### Caching
 
-### Run the Complete Demo
-
-```bash
-# Clone the repository
-git clone https://github.com/carvalab/openbymadata.git
-cd openbymadata
-
-# Run the complete example (shows all features)
-go run cmd/example/main.go
-
-# Or build and run
-go build -o byma-demo cmd/example/main.go
-./byma-demo
-```
-
-### Example Output
-
-```
-🏛️  OpenBYMAData Go Library - Complete Example
-============================================================
-🚀 Features: Individual ticker lookups, 5-minute caching, batch operations
-
-📊 1. Market Status & Info
-------------------------------
-Market Status: 🟢 OPEN
-Market Indices (15):
-  📈 G: 94518124.24 (0.01%)
-  📈 M: 2213570.17 (0.01%)
-  📈 SPBYCAP: 39874.07 (0.03%)
-
-💰 2. Individual Ticker Lookups
------------------------------------
-🇺🇸 CEDEARs:
-   🍎 AAPL: $13825.00 (0.00%) [220ms]
-      Volume: 46576 | Last Update: 16:59:00
-🇦🇷 Argentine Leading Equity:
-   🏦 GGAL: $6620.00 (-0.00%)
-🔍 Universal Search:
-   📉 BMA: $9140.00 (-0.01%)
-   📈 TSLA: $28175.00 (0.04%)
-   ❌ UNKNOWN: Not found
-
-📦 3. Batch Operations
--------------------------
-💼 Portfolio (6/6 securities) [74µs]:
-   🟢 AAPL  : $13825.00    +0.00%
-   🔴 MSFT  : $22100.00    -0.00%
-   🟢 GOOGL : $4300.00     +0.00%
-   🟢 TSLA  : $28175.00    +0.04%
-   🟢 META  : $38750.00    +0.01%
-   🔴 GGAL  : $6620.00     -0.00%
-   💰 Total Portfolio Value: $113770.00
-
-📋 4. Collection Data (API endpoints: leading-equity, general-equity, cedears)
---------------------------------------------------------------------------------
-💎 Leading Equity (21 securities from 'leading-equity' endpoint):
-   🔴 ALUA: $709.00 (-0.00%) | Vol: 1171941
-   ... and 18 more
-
-🌎 CEDEARs (1132 securities from 'cedears' endpoint):
-   🟢 AAL: $7530.00 (0.01%)
-   ... and 1129 more
-
-🏢 General Equity (178 securities from 'general-equity' endpoint):
-   🟢 A3: $2500.00 (0.01%)
-   ... and 175 more
-
-🏛️  5. Fixed Income & Derivatives
------------------------------------
-📊 Government Bonds: 156 instruments
-   Example: AL30 - $428.50
-📈 Options: 2847 contracts
-🔮 Futures: 23 contracts
-
-⚡ 6. Cache Performance (5-minute automatic caching)
--------------------------------------------------------
-🗄️  Cache Status:
-   bluechips   : 21 items, age 215ms, fresh: true
-   cedears     : 1132 items, age 256ms, fresh: true
-   galpones    : 178 items, age 165ms, fresh: true
-
-🏃 Cache Speed Test:
-   Getting AAPL again (cached)... 750ns (lightning fast!)
-
-📈 7. Historical Data (Chart Data)
------------------------------------
-📊 Historical Data for SPY (last 30 days):
-   Retrieved 21 data points:
-   First (2024-02-15): Open=$484.21 High=$486.58 Low=$483.12 Close=$485.22 Vol=45782
-   Middle (2024-02-28): Open=$502.18 High=$503.47 Low=$501.25 Close=$502.87 Vol=52341
-   Latest (2024-03-15): Open=$518.45 High=$519.23 Low=$517.89 Close=$518.67 Vol=38945
-
-📅 Custom Date Range (Weekly data - last 3 months):
-   AAPL Weekly Data - 13 weeks retrieved
-   Latest week (2024-03-15): Close=$182.31
-
-📰 8. News & Financial Data
-------------------------------
-📰 Latest News (24 items):
-   📄 BYMA informa cotizaciones del día
-      Date: 2024-03-15 18:30
-   📄 Resultados trimestrales empresas listadas
-      Date: 2024-03-15 16:45
-📊 Income statements for ALUA: 8 records
-
-🎉 Example Complete!
-============================================================
-✨ Features Demonstrated:
-   • Individual ticker lookups (GetCedear, GetBluechip, GetSecurity)
-   • Efficient batch operations (GetMultipleSecurities)
-   • Historical data & charting (GetHistory, GetHistoryLastDays)
-   • 5-minute automatic caching (fewer API calls)
-   • API endpoint mapping:
-     - GetBluechips()  → 'leading-equity' endpoint
-     - GetGalpones()   → 'general-equity' endpoint
-     - GetCedears()    → 'cedears' endpoint
-     - GetHistory()    → 'chart/historical-series/history' endpoint
-   • Full market data coverage (equities, bonds, derivatives)
-   • Real-time market news and financial data
-   • Thread-safe concurrent operations
-   • Comprehensive error handling
-
-🚀 Production Ready:
-   • Context-aware operations
-   • Built-in retry logic
-   • Strongly-typed data structures
-   • Zero external dependencies
-```
-
-### Run Example Tests
-
-```bash
-# Run example tests
-go test -v -run "Example"
-
-# Run specific example test
-go test -v -run "ExampleClient"
-```
-
-## 📚 Documentation
-
-### Available Resources
-
-| Resource | Description |
-|----------|-------------|
-| 📖 **[pkg.go.dev](https://pkg.go.dev/github.com/carvalab/openbymadata)** | **Primary documentation** - Complete API reference with examples |
-| 🎯 **[example_test.go](example_test.go)** | Runnable examples for all features |
-| 🏛️ **[cmd/example/main.go](cmd/example/main.go)** | Complete demo showing all functionality |
-| 💾 **[CACHING_GUIDE.md](CACHING_GUIDE.md)** | In-depth caching performance guide |
-| 🐛 **[DEBUG.md](DEBUG.md)** | Debugging and troubleshooting guide |
-
-### Viewing Documentation
-
-```bash
-# 🌐 Best option: Visit pkg.go.dev (rich examples and formatting)
-# https://pkg.go.dev/github.com/carvalab/openbymadata
-
-# Terminal documentation
-go doc -all
-
-# Run examples
-go test -v -run "Example"
-```
-
-## API Reference
-
-### Individual Ticker Lookups (NEW! 🔥)
+Market-wide lists (panels, bonds, options, indices, news, MEP, the catalog)
+are kept in memory for 5 minutes, shared across goroutines. Lookups such as
+`GetBluechip` or `GetMultipleSecurities` read from those cached lists.
 
 ```go
-// Universal search (recommended - searches all security types)
-security, err := client.GetSecurity(ctx, "AAPL")    // Works for any symbol
-
-// Specific security types
-aapl, err := client.GetCedear(ctx, "AAPL")          // US stocks (CEDEARs)
-ggal, err := client.GetBluechip(ctx, "GGAL")        // Argentine blue chips
-galpone, err := client.GetGalpone(ctx, "SYMBOL")    // General equity
-bond, err := client.GetBond(ctx, "AL30")            // All bond types
-option, err := client.GetOption(ctx, "GGAL123")     // Options
-future, err := client.GetFuture(ctx, "DOE25")       // Futures
+client.GetCacheInfo() // per-key count, age and freshness
+client.ClearCache()   // force fresh data
 ```
 
-### Batch Operations (Efficient! ⚡)
+More in [CACHING_GUIDE.md](CACHING_GUIDE.md).
 
-```go
-// Get multiple securities efficiently (uses shared cache)
-watchlist := []string{"AAPL", "MSFT", "GOOGL", "GGAL"}
-securities, err := client.GetMultipleSecurities(ctx, watchlist)
+### Errors, retries and cancellation
 
-// Search securities by partial symbol
-results, err := client.SearchSecurities(ctx, "APP")  // Finds symbols containing "APP"
-```
+- Every method takes a `context.Context`. Cancelling it or hitting its
+  deadline aborts the request in flight and any pending retry; check with
+  `errors.Is(err, context.DeadlineExceeded)`.
+- Network errors, HTTP 400, 408, 429 and 5xx are retried (`RetryAttempts`,
+  default 3) with a 1s, 2s, 3s… wait. BYMA answers 400 at random under load,
+  which is why it's retried. Other 4xx fail at once.
+- Errors are wrapped Go errors, for example
+  `request failed after 2 attempts: HTTP error 404`.
 
-### Historical Data & Charting (NEW! 📈)
-
-```go
-// Get historical data for the last 30 days (automatically adds "24HS")
-historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
-
-// Get historical data with custom date range
-// Symbols are normalized automatically ("24HS" suffix added if not present)
-// Resolution: "D" = daily, "W" = weekly, "M" = monthly
-// from/to are time.Time (automatic Unix conversion)
-from := time.Now().AddDate(0, -3, 0)  // 3 months ago
-to := time.Now()                      // now
-weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", "W", from, to)
-
-// Data returns OHLCV as separate slices (most efficient format)
-for i := range len(historyData.Time) {
-    fmt.Printf("%s: Close=$%.2f, Volume=%d\n", 
-        historyData.Time[i].Format("2006-01-02"), historyData.Close[i], historyData.Volume[i])
-}
-```
-
-### Market Status & Info
-
-```go
-// Check if market is working today
-isWorking, err := client.IsWorkingDay(ctx)
-
-// Get market indices (Merval, etc.)
-indices, err := client.GetIndices(ctx)
-
-// Get market summary/resume
-summary, err := client.MarketResume(ctx)
-
-// MEP dollar (implied ARS/USD rate)
-mep, err := client.GetMEPIndices(ctx)
-fmt.Printf("%s %.2f\n", mep[0].Symbol, mep[0].Last)
-
-// Merval daily history ("M"; see GetIndices for other symbols)
-merval, err := client.GetIndexHistory(ctx, "M", openbymadata.ResolutionDaily, from, to)
-
-// Top movers: stocks, government bonds and options
-movers, err := client.GetTopMovers(ctx)
-
-// Search any instrument by symbol or name (up to 10 matches)
-matches, err := client.SearchInstruments(ctx, "galicia")
-```
-
-### Collection-Based Access (API Endpoints)
-
-```go
-// All securities of a specific type (cached for 5 minutes)
-bluechips, err := client.GetBluechips(ctx)  // → 'leading-equity' endpoint
-galpones, err := client.GetGalpones(ctx)    // → 'general-equity' endpoint  
-cedears, err := client.GetCedears(ctx)      // → 'cedears' endpoint
-etfs, err := client.GetETFs(ctx)            // → 'etf' endpoint
-```
-
-### Fixed Income
-
-```go
-// Government bonds
-bonds, err := client.GetBonds(ctx)
-
-// Short-term bills (Letras)
-shortTermBonds, err := client.GetShortTermBonds(ctx)
-
-// Corporate bonds
-corporateBonds, err := client.GetCorporateBonds(ctx)
-
-// Labelled bonds
-green, err := client.GetGreenBonds(ctx)
-social, err := client.GetSocialBonds(ctx)
-sustainable, err := client.GetSustainabilityBonds(ctx)
-linked, err := client.GetLinkedBonds(ctx)
-
-// SENEBI: bilateral segment without central counterparty (symbols end in ".SB")
-senebi, err := client.GetSenebiBonds(ctx)
-senebiLetters, err := client.GetSenebiLetters(ctx)
-senebiCorp, err := client.GetSenebiCorporateBonds(ctx)
-
-// Fixed-income indices and a bond's payment schedule
-bondIndices, err := client.GetBondIndices(ctx)
-coupons, err := client.GetBondCoupons(ctx, "GD30")
-
-// Bonds now carry Currency, Market and DaysToMaturity
-fmt.Println(bonds[0].Currency, bonds[0].Market, bonds[0].DaysToMaturity)
-```
-
-### Derivatives
-
-```go
-// Options contracts
-options, err := client.GetOptions(ctx)
-
-// Futures contracts
-futures, err := client.GetFutures(ctx)
-```
-
-### News & Financial Data
-
-```go
-// Market news (cached for 5 minutes)
-news, err := client.GetNews(ctx)
-
-// Income statements for a specific ticker (cached per symbol)
-statements, err := client.GetIncomeStatement(ctx, "GGAL")
-```
-
-### Cache Management (NEW! 💾)
-
-```go
-// Get cache information
-cacheInfo := client.GetCacheInfo()
-fmt.Printf("Cache status: %+v\n", cacheInfo)
-
-// Clear all cached data (forces fresh API calls)
-client.ClearCache()
-
-// Disable caching (not recommended)
-client := openbymadata.NewClient(&openbymadata.ClientOptions{
-    EnableCache: false,
-})
-```
-
-## Data Models
-
-### Security
-```go
-type Security struct {
-    Symbol         string    `json:"symbol"`
-    Settlement     string    `json:"settlement"`
-    BidSize        int64     `json:"bid_size"`
-    Bid            float64   `json:"bid"`
-    Ask            float64   `json:"ask"`
-    AskSize        int64     `json:"ask_size"`
-    Last           float64   `json:"last"`
-    Close          float64   `json:"close"`
-    Change         float64   `json:"change"`
-    Open           float64   `json:"open"`
-    High           float64   `json:"high"`
-    Low            float64   `json:"low"`
-    PreviousClose  float64   `json:"previous_close"`
-    Turnover       float64   `json:"turnover"`
-    Volume         int64     `json:"volume"`
-    Operations     int64     `json:"operations"`
-    DateTime       time.Time `json:"datetime"`
-    Group          string    `json:"group"`
-}
-```
-
-### Bond
-```go
-type Bond struct {
-    // All Security fields plus:
-    Expiration     time.Time `json:"expiration"`
-}
-```
-
-### Option
-```go
-type Option struct {
-    Symbol          string    `json:"symbol"`
-    // ... price fields ...
-    UnderlyingAsset string    `json:"underlying_asset"`
-    Expiration      time.Time `json:"expiration"`
-}
-```
+To see each request, pass a `Logger`; see [DEBUG.md](DEBUG.md).
 
 ## Testing
 
-### Running Tests
-
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run benchmarks
-go test -bench=. ./...
-
-# Run against the live BYMA API
-INTEGRATION_TEST=true go test -tags integration -run Integration ./...
+go test ./...                                                    # unit tests, recorded BYMA responses
+INTEGRATION_TEST=true go test -tags integration -run Integration ./...  # live API
 ```
 
-### Live API Status
+Unit tests replay responses recorded from the real API
+(`internal/api/testdata`), so they run offline. The live suite runs on CI
+every weekday; price checks only run while `IsMarketOpen` is true, so
+holidays and after-hours runs don't fail.
 
-The [Integration workflow](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml) runs the suite against the real BYMA API every weekday while the market is open, so the **Live API** badge above tells you whether the upstream API still matches this library.
+## Keeping up with BYMA
 
-### Test Structure
+BYMA changes the API without notice. Three things catch it:
 
-The library uses HTTP test servers to simulate API responses:
+- the weekday **Live API** run,
+- a drift check that fails when BYMA stops sending a field we parse,
+- a weekly **Discover** run that diffs BYMA's web app against this library
+  and opens an issue listing endpoints to add, remove or fix.
 
-```go
-func TestMyBusinessLogic(t *testing.T) {
-    // Create test server with mock responses
-    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        mockResponse := []openbymadata.Security{
-            {Symbol: "GGAL", Last: 150.50},
-        }
-        json.NewEncoder(w).Encode(mockResponse)
-    }))
-    defer server.Close()
-
-    // Create client pointing to test server
-    client := openbymadata.NewClient(&openbymadata.ClientOptions{
-        BaseURL: server.URL,
-    })
-
-    // Test your business logic
-    result, err := myBusinessLogic(client)
-    assert.NoError(t, err)
-    assert.Equal(t, expectedResult, result)
-}
-```
-
-## Error Handling
-
-The library provides comprehensive error handling with custom error types:
-
-```go
-securities, err := client.GetBluechips(ctx)
-if err != nil {
-    if bymaErr, ok := err.(*openbymadata.BYMAError); ok {
-        switch bymaErr.Code {
-        case "TIMEOUT":
-            // Handle timeout
-        case "RATE_LIMITED":
-            // Handle rate limiting
-        case "API_UNAVAILABLE":
-            // Handle API unavailability
-        default:
-            log.Printf("API error: %v", bymaErr)
-        }
-    } else {
-        log.Printf("Unexpected error: %v", err)
-    }
-}
-```
-
-## Performance & Caching
-
-### 🚀 5-Minute Smart Caching
-
-- **Automatic Caching**: All data cached for 5 minutes by default
-- **Fast Repeat Calls**: Cached calls take microseconds instead of a network round trip
-- **Fewer API Calls**: Less load on BYMA and less risk of rate limiting
-- **Thread-Safe**: Safe for concurrent access across multiple goroutines
-- **Fresh Data Guaranteed**: Cache automatically expires after 5 minutes
-
-### Performance Benefits
-
-- **Individual Lookups**: Get specific tickers without fetching entire collections
-- **Batch Operations**: Efficiently retrieve multiple securities using shared cache
-- **Connection Pooling**: Automatic HTTP connection reuse
-- **Retry Logic**: Built-in exponential backoff for failed requests
-- **Context Support**: Proper cancellation and timeout handling
-
-### Caching in Action
-
-```go
-// First call - fetches from API (slow)
-start := time.Now()
-aapl, _ := client.GetCedear(ctx, "AAPL")
-fmt.Printf("First call: %v\n", time.Since(start)) // ~100ms
-
-// Second call - returns from cache (fast!)
-start = time.Now()
-aapl, _ = client.GetCedear(ctx, "AAPL")
-fmt.Printf("Cached call: %v\n", time.Since(start)) // microseconds, no network call
-
-// Multiple securities use shared cache efficiently
-securities, _ := client.GetMultipleSecurities(ctx, []string{"AAPL", "MSFT", "GOOGL"})
-// All symbols returned instantly from cache!
-```
-
-### Concurrent Access
-
-```go
-// Example: Fetch multiple data types concurrently
-var wg sync.WaitGroup
-var bluechips []Security
-var bonds []Bond
-var indices []Index
-
-wg.Add(3)
-
-go func() {
-    defer wg.Done()
-    bluechips, _ = client.GetBluechips(ctx)    // Cached after first call
-}()
-
-go func() {
-    defer wg.Done()
-    bonds, _ = client.GetBonds(ctx)           // Cached after first call
-}()
-
-go func() {
-    defer wg.Done()
-    indices, _ = client.GetIndices(ctx)       // Cached after first call
-}()
-
-wg.Wait()
-```
-
-## Python Library Reference
-
-This library is inspired by and provides equivalent functionality to the original Python [pyOBD](https://github.com/franco-lamas/PyOBD) library, with Go-specific improvements:
-
-| Python pyOBD | Go openbymadata |
-|---------------|-----------------|
-| `pandas.DataFrame` | Strongly-typed structs |
-| No type safety | Compile-time type checking |
-| GIL limitations | True concurrency |
-| No built-in retry | Exponential backoff retry |
-| Basic error handling | Rich error types |
-| Manual caching | Built-in 5-minute caching |
+[docs/MAINTAINING.md](docs/MAINTAINING.md) has the step-by-step for each
+case.
 
 ## Contributing
 
-If BYMA changed something and the library broke, [docs/MAINTAINING.md](docs/MAINTAINING.md) has the steps to find and fix it.
-
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Add tests for your changes
-4. Run tests: `go test ./...`
-5. Commit your changes (`git commit -am 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Issues and pull requests are welcome. Run `go test ./...` and `gofmt -s`
+before opening a PR. If BYMA changed something, start with
+[docs/MAINTAINING.md](docs/MAINTAINING.md).
 
 ## Acknowledgments
 
-- Original Python [pyOBD](https://github.com/franco-lamas/PyOBD) library
-- [BYMA](https://www.byma.com.ar/) for providing the free API
-- Go community for excellent tooling and libraries
+- [PyOBD](https://github.com/franco-lamas/PyOBD), the Python library this
+  started from
+- [BYMA](https://www.byma.com.ar/) for the free API
 
-## Changelog
+## License
 
-Release notes for every version are on [GitHub Releases](https://github.com/carvalab/openbymadata/releases).
+MIT, see [LICENSE](LICENSE). Release notes are on
+[GitHub Releases](https://github.com/carvalab/openbymadata/releases).

@@ -46,13 +46,14 @@ func TestGetInfoCounts(t *testing.T) {
 	Set(c, "news", []api.News{{}})
 	Set(c, IncomeKey("ALUA"), []api.IncomeStatement{{}, {}, {}})
 	Set(c, "bond_indices", []api.BondIndex{{}})
+	Set(c, "catalog", []api.CatalogInstrument{{}})
 	Set(c, "other", "x")
 
 	info := c.GetInfo()
 	count := func(key string) int { return info[key].(map[string]any)["count"].(int) }
 	assert.Equal(t, 2, count("securities"))
 	assert.Equal(t, 3, count("income:ALUA"))
-	for _, k := range []string{"bonds", "options", "futures", "indices", "summary", "news", "bond_indices"} {
+	for _, k := range []string{"bonds", "options", "futures", "indices", "summary", "news", "bond_indices", "catalog"} {
 		assert.Equal(t, 1, count(k), k)
 	}
 	assert.Equal(t, 0, count("other"))

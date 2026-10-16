@@ -484,3 +484,45 @@ func TestAttemptCount(t *testing.T) {
 	_, err := c.GetNews(context.Background())
 	assert.EqualError(t, err, "request failed after 1 attempts: HTTP error 404")
 }
+
+func TestContextCancelsRetries(t *testing.T) {
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	c := New(&ClientOptions{BaseURL: srv.URL, Timeout: 5 * time.Second, RetryAttempts: 5, Logger: nopLogger{}})
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, err := c.GetIndices(ctx)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Less(t, time.Since(start), 900*time.Millisecond, "must not wait out the 1s retry backoff")
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestContextAbortsInFlightRequest(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	defer srv.Close()
+	defer close(release)
+
+	c := New(&ClientOptions{BaseURL: srv.URL, Timeout: 10 * time.Second, RetryAttempts: 3, Logger: nopLogger{}})
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	_, err := c.IsMarketOpen(ctx)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Less(t, time.Since(start), 2*time.Second)
+}

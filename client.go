@@ -1,49 +1,44 @@
-// Package openbymadata provides a comprehensive Go client for accessing financial data
-// from the Buenos Aires Stock Exchange (BYMA - Bolsas y Mercados Argentinos) through
-// their free public API.
-//
-// OpenBYMAData offers strongly-typed, concurrent-safe access to Argentine financial
-// market data with built-in 5-minute caching, individual ticker lookups, batch operations,
-// and historical data retrieval.
+// Package openbymadata is a Go client for BYMA Open Data
+// (https://open.bymadata.com.ar), the free market data API of the Buenos
+// Aires stock exchange: stocks, CEDEARs, ETFs, bonds, repos, options,
+// futures, indices, the MEP dollar, live quotes and OHLCV history. No API key
+// is needed.
 //
 // # Quick Start
 //
-// Create a client and start fetching data:
-//
-//	client := openbymadata.NewClient()
+//	client := openbymadata.NewClient() // 5-minute cache on
 //	defer client.Close()
 //	ctx := context.Background()
 //
-//	aapl, err := client.GetCedear(ctx, "AAPL")
+//	ggal, err := client.GetBluechip(ctx, "GGAL")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
-//	fmt.Printf("AAPL: $%.2f (%.2f%%)\n", aapl.Last, aapl.Change)
+//	fmt.Printf("GGAL %.2f (%+.2f%%)\n", ggal.Last, ggal.Change*100)
 //
-// # Key Features
+// # Things to know
 //
-// Individual Ticker Lookups: Get specific securities without fetching entire collections.
-// Use GetSecurity() for universal search, or specific methods like GetCedear(), GetBluechip().
+// History symbols need a settlement suffix: GetHistory(ctx, "GGAL 24HS", ...).
+// A bare "GGAL" returns an empty result without an error.
 //
-// Batch Operations: Efficiently retrieve multiple securities in a single operation using
-// GetMultipleSecurities().
+// Quotes use Settlement24HS or SettlementCI; 48HS no longer trades since
+// Argentina moved to T+1.
 //
-// Historical Data: Access OHLCV charting data with GetHistory() and GetIntradayHistory().
+// IsMarketOpen reports whether BYMA is trading right now (false on holidays
+// and outside hours); IsWorkingDay only covers the day.
 //
-// Smart Caching: All collection data is automatically cached for 5 minutes, so repeated
-// calls are answered from memory instead of the network.
+// Change fields are fractions: 0.0123 means +1.23%.
 //
-// # Configuration
+// # Caching, retries and cancellation
 //
-// Customize the client with ClientOptions:
+// Market-wide lists are cached for 5 minutes and shared across goroutines;
+// quotes, history and market status are always fetched. Every method takes a
+// context: cancelling it aborts the request and any pending retry. Network
+// errors, HTTP 400, 408, 429 and 5xx are retried RetryAttempts times.
 //
-//	opts := &openbymadata.ClientOptions{
-//		Timeout:       30 * time.Second,
-//		RetryAttempts: 5,
-//		EnableCache:   true,
-//	}
+//	opts := openbymadata.DefaultClientOptions()
+//	opts.Timeout = 10 * time.Second
 //	client := openbymadata.NewClient(opts)
-//	defer client.Close()
 package openbymadata
 
 import (
@@ -261,6 +256,48 @@ func (c *client) GetMEPIndices(ctx context.Context) ([]Index, error) {
 func (c *client) GetTopMovers(ctx context.Context) (*TopMovers, error) {
 	return cached(ctx, c, "top_movers", func(ctx context.Context) (*TopMovers, error) {
 		return c.Client.GetTopMovers(ctx)
+	})
+}
+
+// GetCorporateGovernance retrieves the stocks in BYMA's Corporate Governance panel.
+func (c *client) GetCorporateGovernance(ctx context.Context) ([]Security, error) {
+	return cached(ctx, c, "corporate_governance", func(ctx context.Context) ([]Security, error) {
+		return c.Client.GetCorporateGovernance(ctx)
+	})
+}
+
+// GetCorporateGovernancePlus retrieves the stocks in BYMA's Corporate Governance Plus panel.
+func (c *client) GetCorporateGovernancePlus(ctx context.Context) ([]Security, error) {
+	return cached(ctx, c, "corporate_governance_plus", func(ctx context.Context) ([]Security, error) {
+		return c.Client.GetCorporateGovernancePlus(ctx)
+	})
+}
+
+// GetFinancialTrusts retrieves financial trusts (fideicomisos financieros).
+func (c *client) GetFinancialTrusts(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "financial_trusts", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetFinancialTrusts(ctx)
+	})
+}
+
+// GetRepos retrieves cauciones (repo loans). Prices are rates as BYMA publishes them.
+func (c *client) GetRepos(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "repos", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetRepos(ctx)
+	})
+}
+
+// GetSecuritiesLending retrieves securities lending contracts. Prices are rates as BYMA publishes them.
+func (c *client) GetSecuritiesLending(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "securities_lending", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSecuritiesLending(ctx)
+	})
+}
+
+// GetInstrumentCatalog returns every instrument BYMA lists (about 11,000).
+func (c *client) GetInstrumentCatalog(ctx context.Context) ([]CatalogInstrument, error) {
+	return cached(ctx, c, "instrument_catalog", func(ctx context.Context) ([]CatalogInstrument, error) {
+		return c.Client.GetInstrumentCatalog(ctx)
 	})
 }
 

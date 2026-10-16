@@ -9,6 +9,9 @@ import (
 // securitiesBody asks for T+1 (24hs) prices, which is what the web app shows.
 var securitiesBody = []byte(`{"excludeZeroPxAndQty":false,"T2":false,"T1":true,"T0":false,"Content-Type":"application/json"}`)
 
+// plainBody is what the web app sends to endpoints without filters.
+var plainBody = []byte(`{"Content-Type":"application/json"}`)
+
 // GetBluechips retrieves leading equity securities (blue chip stocks)
 func (c *Client) GetBluechips(ctx context.Context) ([]Security, error) {
 	return c.getSecurities(ctx, pathLeadingEquity)
@@ -29,8 +32,24 @@ func (c *Client) GetETFs(ctx context.Context) ([]Security, error) {
 	return c.getSecurities(ctx, pathETF)
 }
 
+// GetCorporateGovernance retrieves the stocks in BYMA's Corporate
+// Governance panel.
+func (c *Client) GetCorporateGovernance(ctx context.Context) ([]Security, error) {
+	return c.getSecuritiesWith(ctx, pathGovernance, plainBody)
+}
+
+// GetCorporateGovernancePlus retrieves the stocks in BYMA's Corporate
+// Governance Plus panel.
+func (c *Client) GetCorporateGovernancePlus(ctx context.Context) ([]Security, error) {
+	return c.getSecuritiesWith(ctx, pathGovernancePlus, plainBody)
+}
+
 func (c *Client) getSecurities(ctx context.Context, endpoint string) ([]Security, error) {
-	respData, err := c.post(c.buildURL(endpoint), securitiesBody)
+	return c.getSecuritiesWith(ctx, endpoint, securitiesBody)
+}
+
+func (c *Client) getSecuritiesWith(ctx context.Context, endpoint string, body []byte) ([]Security, error) {
+	respData, err := c.post(ctx, c.buildURL(endpoint), body)
 	if err != nil {
 		return nil, err
 	}

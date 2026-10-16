@@ -8,7 +8,7 @@ import (
 
 // GetOptions retrieves options contracts
 func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
-	respData, err := c.post(c.buildURL(pathOptions), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathOptions), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 
 // GetFutures retrieves futures contracts
 func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
-	respData, err := c.post(c.buildURL(pathIndexFuture), []byte(`{"page_number":1,"excludeZeroPxAndQty":true,"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathIndexFuture), []byte(`{"page_number":1,"excludeZeroPxAndQty":true,"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}

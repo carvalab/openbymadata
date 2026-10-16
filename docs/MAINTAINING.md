@@ -14,6 +14,11 @@ This is the routine for catching that and deciding what to **add**,
 
 A red **Live API** badge or an open Discover issue means there's work.
 
+The Integration run asks `IsMarketOpen` first. Checks that need live prices
+(traded volume, a GGAL quote, the server clock inside trading hours) only run
+while the market is open, so holidays and late runs don't fail. Everything
+else runs every time.
+
 ## The discovery tool
 
 BYMA's web app (open.bymadata.com.ar) is the reference client. Its
@@ -115,4 +120,12 @@ failing for good (login, 404):
   returned an empty list with the securities body and 128 records with the
   web app's.
 - Skipped endpoints and why: `scripts/discover/skipped.txt`.
+- Some endpoints are GET only: `market-open`, `server-time`, the instrument
+  catalog and every `chart/...` series. POST gets HTTP 405.
+- Chart endpoints report failures in the body: `{"s":"error","errmsg":...}`
+  with HTTP 200. `GetHistory` turns that into an error.
+- `server-time` sends Buenos Aires local time without a zone.
+- `Change`/`imbalance` is a fraction (0.0123 = +1.23%).
+- `market-open` is true only during trading hours, false on holidays: use it
+  rather than a calendar to know whether prices should be moving.
 - `denominationCcy` can be `"EXT"` besides `"ARS"`; meaning unconfirmed.

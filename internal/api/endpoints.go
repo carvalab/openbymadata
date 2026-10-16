@@ -39,6 +39,14 @@ const (
 	pathResponsibles    = "bnown/fichatecnica/sociedades/responsables"
 	pathIndexHistory    = "chart/index-historical-series/history"
 	pathSearch          = "instruments-for-header-search"
+	pathRepos           = "cauciones"
+	pathLending         = "loans-liquidation"
+	pathTrusts          = "bnown/seriesHistoricas/fideicomisos"
+	pathGovernance      = "corporate-governance"
+	pathGovernancePlus  = "corporate-governance-plus"
+	pathCatalog         = "instrumentproduct/instrument/all-instrument-select"
+	pathMarketOpen      = "market-open"
+	pathServerTime      = "server-time"
 )
 
 // sectionHeader is the value BYMA expects in the "Options" request header
@@ -79,6 +87,14 @@ var sectionHeader = map[string]string{
 	pathSenebiCorpBonds: "renta-fija",
 	pathCoupons:         "technical-details",
 	pathResponsibles:    "technical-details",
+	pathRepos:           "renta-fija",
+	pathLending:         "renta-fija",
+	pathGovernance:      "renta-variable",
+	pathGovernancePlus:  "renta-variable",
+	pathCatalog:         "renta-variable",
+	pathMarketOpen:      "dashboard",
+	pathServerTime:      "dashboard",
+	// pathTrusts: the web app sends no Options header for it.
 }
 
 // Settlement identifies the settlement window used by BYMA quote endpoints.

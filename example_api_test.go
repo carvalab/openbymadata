@@ -19,7 +19,7 @@ func newExampleServer() *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case strings.HasSuffix(r.URL.Path, "leading-equity"):
-			fmt.Fprint(w, `{"data":[{"symbol":"GGAL","settlementType":"2","settlementPrice":5825,"imbalance":-1.19,"volume":203162}]}`)
+			fmt.Fprint(w, `{"data":[{"symbol":"GGAL","settlementType":"2","settlementPrice":5825,"imbalance":-0.0119,"volume":203162}]}`)
 		case strings.HasSuffix(r.URL.Path, "cotizacion"):
 			fmt.Fprint(w, `{"data":[{"symbol":"GGAL","settlementType":"2","bidPrice":5825,"offerPrice":5835,"settlementPrice":5830,"previousClosingPrice":5895}]}`)
 		case strings.HasSuffix(r.URL.Path, "market-time"):
@@ -47,7 +47,7 @@ func ExampleClient_GetBluechips() {
 		log.Fatal(err)
 	}
 	for _, s := range bluechips {
-		fmt.Printf("%s: $%.2f (%.2f%%)\n", s.Symbol, s.Last, s.Change)
+		fmt.Printf("%s: $%.2f (%.2f%%)\n", s.Symbol, s.Last, s.Change*100)
 	}
 
 	// Output:
