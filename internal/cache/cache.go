@@ -90,6 +90,8 @@ func (c *Cache) GetInfo() map[string]any {
 			count = len(v)
 		case []api.BondIndex:
 			count = len(v)
+		case []api.CatalogInstrument:
+			count = len(v)
 		}
 		info[key] = map[string]any{
 			"count":     count,

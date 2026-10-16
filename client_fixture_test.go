@@ -271,17 +271,23 @@ func TestClientNewEndpoints(t *testing.T) {
 	ctx := context.Background()
 
 	lists := map[string]func() (int, error){
-		"etf":                             func() (int, error) { v, err := c.GetETFs(ctx); return len(v), err },
-		"green-bond":                      func() (int, error) { v, err := c.GetGreenBonds(ctx); return len(v), err },
-		"social-bond":                     func() (int, error) { v, err := c.GetSocialBonds(ctx); return len(v), err },
-		"sustainability-bond":             func() (int, error) { v, err := c.GetSustainabilityBonds(ctx); return len(v), err },
-		"linked-bond":                     func() (int, error) { v, err := c.GetLinkedBonds(ctx); return len(v), err },
-		"senebi-bonds":                    func() (int, error) { v, err := c.GetSenebiBonds(ctx); return len(v), err },
-		"senebi-letras":                   func() (int, error) { v, err := c.GetSenebiLetters(ctx); return len(v), err },
-		"senebi-obligaciones-negociables": func() (int, error) { v, err := c.GetSenebiCorporateBonds(ctx); return len(v), err },
-		"index-bonds":                     func() (int, error) { v, err := c.GetBondIndices(ctx); return len(v), err },
-		"getBymaIndexsMep":                func() (int, error) { v, err := c.GetMEPIndices(ctx); return len(v), err },
-		"main-ups-downs":                  func() (int, error) { v, err := c.GetTopMovers(ctx); return len(v.Stocks), err },
+		"etf":                                 func() (int, error) { v, err := c.GetETFs(ctx); return len(v), err },
+		"green-bond":                          func() (int, error) { v, err := c.GetGreenBonds(ctx); return len(v), err },
+		"social-bond":                         func() (int, error) { v, err := c.GetSocialBonds(ctx); return len(v), err },
+		"sustainability-bond":                 func() (int, error) { v, err := c.GetSustainabilityBonds(ctx); return len(v), err },
+		"linked-bond":                         func() (int, error) { v, err := c.GetLinkedBonds(ctx); return len(v), err },
+		"senebi-bonds":                        func() (int, error) { v, err := c.GetSenebiBonds(ctx); return len(v), err },
+		"senebi-letras":                       func() (int, error) { v, err := c.GetSenebiLetters(ctx); return len(v), err },
+		"senebi-obligaciones-negociables":     func() (int, error) { v, err := c.GetSenebiCorporateBonds(ctx); return len(v), err },
+		"index-bonds":                         func() (int, error) { v, err := c.GetBondIndices(ctx); return len(v), err },
+		"getBymaIndexsMep":                    func() (int, error) { v, err := c.GetMEPIndices(ctx); return len(v), err },
+		"main-ups-downs":                      func() (int, error) { v, err := c.GetTopMovers(ctx); return len(v.Stocks), err },
+		"cauciones":                           func() (int, error) { v, err := c.GetRepos(ctx); return len(v), err },
+		"loans-liquidation":                   func() (int, error) { v, err := c.GetSecuritiesLending(ctx); return len(v), err },
+		"bnown_seriesHistoricas_fideicomisos": func() (int, error) { v, err := c.GetFinancialTrusts(ctx); return len(v), err },
+		"corporate-governance":                func() (int, error) { v, err := c.GetCorporateGovernance(ctx); return len(v), err },
+		"corporate-governance-plus":           func() (int, error) { v, err := c.GetCorporateGovernancePlus(ctx); return len(v), err },
+		"instrumentproduct_instrument_all-instrument-select": func() (int, error) { v, err := c.GetInstrumentCatalog(ctx); return len(v), err },
 	}
 	for endpoint, get := range lists {
 		t.Run(endpoint, func(t *testing.T) {
@@ -307,4 +313,15 @@ func TestClientNewEndpoints(t *testing.T) {
 	assert.Equal(t, "GGAL", found[0].Symbol)
 
 	assert.Equal(t, 3, c.GetCacheInfo()["bond_indices"].(map[string]any)["count"])
+
+	// Market status is never cached.
+	for range 2 {
+		open, err := c.IsMarketOpen(ctx)
+		require.NoError(t, err)
+		assert.True(t, open)
+		_, err = c.GetServerTime(ctx)
+		require.NoError(t, err)
+	}
+	assert.Equal(t, int32(2), counts["market-open"].Load())
+	assert.Equal(t, int32(2), counts["server-time"].Load())
 }

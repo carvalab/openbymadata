@@ -36,7 +36,7 @@ func (c *Client) GetEquityProfile(ctx context.Context, symbol string) (*EquityPr
 
 // GetCompanyManagement returns the directors/management roster for a society.
 func (c *Client) GetCompanyManagement(ctx context.Context, symbol string) ([]CompanyDirector, error) {
-	respData, err := c.post(c.buildURL(pathCompanyMgmt), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
+	respData, err := c.post(ctx, c.buildURL(pathCompanyMgmt), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (c *Client) GetCompanyManagement(ctx context.Context, symbol string) ([]Com
 // Since 2026 BYMA redirects this endpoint to an OAuth login, so it fails
 // on the free API. Use GetIncomeStatement for the filed statement PDFs.
 func (c *Client) GetCompanyBalance(ctx context.Context, symbol string) ([]CompanyBalance, error) {
-	respData, err := c.post(c.buildURL(pathCompanyBalance), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
+	respData, err := c.post(ctx, c.buildURL(pathCompanyBalance), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (c *Client) GetCompanyBalance(ctx context.Context, symbol string) ([]Compan
 }
 
 func (c *Client) fetchCompanyRecord(ctx context.Context, endpoint, symbol string) (map[string]interface{}, error) {
-	respData, err := c.post(c.buildURL(endpoint), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
+	respData, err := c.post(ctx, c.buildURL(endpoint), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func stringifyValue(v interface{}) string {
 // GetMarketResponsibles returns the company's designated market
 // representatives (responsables de relaciones con el mercado).
 func (c *Client) GetMarketResponsibles(ctx context.Context, symbol string) ([]MarketResponsible, error) {
-	respData, err := c.post(c.buildURL(pathResponsibles), symbolBody(symbol))
+	respData, err := c.post(ctx, c.buildURL(pathResponsibles), symbolBody(symbol))
 	if err != nil {
 		return nil, err
 	}

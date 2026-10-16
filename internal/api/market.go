@@ -13,7 +13,7 @@ import (
 // GetMarketTime returns the full market-time payload, with the opening
 // and closing instants parsed in the timezone advertised by the response.
 func (c *Client) GetMarketTime(ctx context.Context) (MarketTime, error) {
-	respData, err := c.post(c.buildURL(pathMarketTime), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathMarketTime), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return MarketTime{}, err
 	}
@@ -56,7 +56,7 @@ func (c *Client) IsWorkingDay(ctx context.Context) (bool, error) {
 
 // GetIndices retrieves market indices information
 func (c *Client) GetIndices(ctx context.Context) ([]Index, error) {
-	respData, err := c.post(c.buildURL(pathIndexPrice), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathIndexPrice), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +74,45 @@ func (c *Client) GetIndices(ctx context.Context) ([]Index, error) {
 	return indices, nil
 }
 
+// IsMarketOpen reports whether BYMA is trading right now. It is false on
+// weekends, holidays and outside trading hours; IsWorkingDay only covers
+// the day.
+func (c *Client) IsMarketOpen(ctx context.Context) (bool, error) {
+	respData, err := c.get(ctx, c.buildURL(pathMarketOpen))
+	if err != nil {
+		return false, err
+	}
+	var open bool
+	if err := json.Unmarshal(respData, &open); err != nil {
+		return false, fmt.Errorf("invalid market-open response: %w", err)
+	}
+	return open, nil
+}
+
+// GetServerTime returns BYMA's server clock. The API sends local Buenos
+// Aires time without a zone, so the result is in UTC-3.
+func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
+	respData, err := c.get(ctx, c.buildURL(pathServerTime))
+	if err != nil {
+		return time.Time{}, err
+	}
+	var raw struct {
+		DateTime string `json:"datetime"`
+	}
+	if err := json.Unmarshal(respData, &raw); err != nil {
+		return time.Time{}, fmt.Errorf("invalid server-time response: %w", err)
+	}
+	t, err := time.ParseInLocation("2006-01-02T15:04:05.999999999", raw.DateTime, buenosAires)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid server-time %q: %w", raw.DateTime, err)
+	}
+	return t, nil
+}
+
 // GetMEPIndices retrieves BYMA's MEP dollar indices (IDXDOLARB and
 // related), the implied ARS/USD rate from bond trading.
 func (c *Client) GetMEPIndices(ctx context.Context) ([]Index, error) {
-	respData, err := c.post(c.buildURL(pathMEP), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathMEP), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +142,7 @@ func parseIndex(raw map[string]interface{}) Index {
 // GetTopMovers retrieves the stocks, government bonds and options from
 // BYMA's "main ups and downs" panel.
 func (c *Client) GetTopMovers(ctx context.Context) (*TopMovers, error) {
-	respData, err := c.post(c.buildURL(pathTopMovers), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathTopMovers), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +173,7 @@ func (c *Client) GetTopMovers(ctx context.Context) (*TopMovers, error) {
 
 // MarketResume retrieves market summary data
 func (c *Client) MarketResume(ctx context.Context) ([]MarketSummary, error) {
-	respData, err := c.post(c.buildURL(pathTotalNegotiated), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathTotalNegotiated), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}

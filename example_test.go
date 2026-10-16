@@ -44,7 +44,7 @@ func ExampleClient_GetCedear() {
 			{
 				"symbol":          "AAPL",
 				"settlementPrice": 150.50,
-				"imbalance":       2.5,
+				"imbalance":       0.025,
 				"volume":          float64(1000000),
 			},
 		}
@@ -63,7 +63,7 @@ func ExampleClient_GetCedear() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("AAPL: $%.2f (%.1f%% change)\n", aapl.Last, aapl.Change)
+	fmt.Printf("AAPL: $%.2f (%.1f%% change)\n", aapl.Last, aapl.Change*100)
 	fmt.Printf("Volume: %d\n", aapl.Volume)
 
 	// Output:

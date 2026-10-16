@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -84,17 +85,18 @@ func (c *Client) Close() {
 }
 
 // get performs a GET request with retries
-func (c *Client) get(url string) ([]byte, error) {
-	return c.doRequest("GET", url, nil)
+func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
+	return c.doRequest(ctx, "GET", url, nil)
 }
 
 // post performs a POST request with retries
-func (c *Client) post(url string, data []byte) ([]byte, error) {
-	return c.doRequest("POST", url, data)
+func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, error) {
+	return c.doRequest(ctx, "POST", url, data)
 }
 
 // doRequest performs an HTTP request with retries and proper error handling
-func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
+// Cancelling ctx aborts the request in flight and any pending retry.
+func (c *Client) doRequest(ctx context.Context, method, url string, data []byte) ([]byte, error) {
 	var lastErr error
 	attempts := 0
 
@@ -106,13 +108,19 @@ func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
 				LogField{Key: "attempt", Value: attempt},
 				LogField{Key: "wait_time", Value: waitTime},
 				LogField{Key: "url", Value: url})
-			time.Sleep(waitTime)
+			timer := time.NewTimer(waitTime)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, fmt.Errorf("request cancelled after %d attempts: %w", attempts-1, ctx.Err())
+			case <-timer.C:
+			}
 		}
 
-		resp, err := c.makeRequest(method, url, data)
+		resp, err := c.makeRequest(ctx, method, url, data)
 		if err != nil {
 			lastErr = err
-			if !isRetryable(err) {
+			if ctx.Err() != nil || !isRetryable(err) {
 				break
 			}
 			continue
@@ -124,13 +132,13 @@ func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
 	return nil, fmt.Errorf("request failed after %d attempts: %w", attempts, lastErr)
 }
 
-func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
+func (c *Client) makeRequest(ctx context.Context, method, url string, data []byte) ([]byte, error) {
 	var body io.Reader
 	if data != nil {
 		body = bytes.NewReader(data)
 	}
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

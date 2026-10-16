@@ -57,7 +57,7 @@ func main() {
 				changeSymbol = "📉"
 			}
 			fmt.Printf("  %s %s: %.2f (%.2f%%)\n",
-				changeSymbol, index.Symbol, index.Last, index.Change)
+				changeSymbol, index.Symbol, index.Last, index.Change*100)
 		}
 	}
 
@@ -76,7 +76,7 @@ func main() {
 	} else {
 		duration := time.Since(startTime)
 		fmt.Printf("   🍎 AAPL: $%.2f (%.2f%%) [%v]\n",
-			aapl.Last, aapl.Change, duration)
+			aapl.Last, aapl.Change*100, duration)
 		fmt.Printf("      Volume: %d | Last Update: %s\n",
 			aapl.Volume, aapl.DateTime.Format("15:04:05"))
 	}
@@ -87,7 +87,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("   ❌ GGAL: %v\n", err)
 	} else {
-		fmt.Printf("   🏦 GGAL: $%.2f (%.2f%%)\n", ggal.Last, ggal.Change)
+		fmt.Printf("   🏦 GGAL: $%.2f (%.2f%%)\n", ggal.Last, ggal.Change*100)
 	}
 
 	// Universal search (don't need to know security type)
@@ -103,7 +103,7 @@ func main() {
 				changeIcon = "📉"
 			}
 			fmt.Printf("   %s %s: $%.2f (%.2f%%)\n",
-				changeIcon, symbol, security.Last, security.Change)
+				changeIcon, symbol, security.Last, security.Change*100)
 		}
 	}
 
@@ -133,7 +133,7 @@ func main() {
 					changeIcon = "🔴"
 				}
 				fmt.Printf("   %s %-6s: $%-10.2f %+6.2f%%\n",
-					changeIcon, symbol, security.Last, security.Change)
+					changeIcon, symbol, security.Last, security.Change*100)
 				totalValue += security.Last
 			} else {
 				fmt.Printf("   ❌ %-6s: Not found\n", symbol)
@@ -164,7 +164,7 @@ func main() {
 				changeIcon = "🔴"
 			}
 			fmt.Printf("   %s %s: $%.2f (%.2f%%) | Vol: %d\n",
-				changeIcon, security.Symbol, security.Last, security.Change, security.Volume)
+				changeIcon, security.Symbol, security.Last, security.Change*100, security.Volume)
 		}
 	}
 
@@ -184,7 +184,7 @@ func main() {
 				changeIcon = "🔴"
 			}
 			fmt.Printf("   %s %s: $%.2f (%.2f%%)\n",
-				changeIcon, cedear.Symbol, cedear.Last, cedear.Change)
+				changeIcon, cedear.Symbol, cedear.Last, cedear.Change*100)
 		}
 	}
 
@@ -204,7 +204,7 @@ func main() {
 				changeIcon = "🔴"
 			}
 			fmt.Printf("   %s %s: $%.2f (%.2f%%)\n",
-				changeIcon, galpone.Symbol, galpone.Last, galpone.Change)
+				changeIcon, galpone.Symbol, galpone.Last, galpone.Change*100)
 		}
 	}
 

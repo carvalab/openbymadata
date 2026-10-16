@@ -60,8 +60,32 @@ func (c *Client) GetSenebiCorporateBonds(ctx context.Context) ([]Bond, error) {
 	return c.getFixedIncome(ctx, pathSenebiCorpBonds)
 }
 
+// GetRepos retrieves cauciones (repo loans). Symbol encodes the term and
+// currency, e.g. "PESOS-1910-U-CT-ARS"; Underlying is the collateral
+// family. Prices are rates as BYMA publishes them: the scale differs
+// between fields, so compare like with like.
+func (c *Client) GetRepos(ctx context.Context) ([]Bond, error) {
+	return c.getFixedIncomeWith(ctx, pathRepos, plainBody)
+}
+
+// GetSecuritiesLending retrieves securities lending (préstamos de valores)
+// contracts; Underlying is the lent security. Prices are rates, as in
+// GetRepos.
+func (c *Client) GetSecuritiesLending(ctx context.Context) ([]Bond, error) {
+	return c.getFixedIncomeWith(ctx, pathLending, plainBody)
+}
+
+// GetFinancialTrusts retrieves financial trusts (fideicomisos financieros).
+func (c *Client) GetFinancialTrusts(ctx context.Context) ([]Bond, error) {
+	return c.getFixedIncomeWith(ctx, pathTrusts, plainBody)
+}
+
 func (c *Client) getFixedIncome(ctx context.Context, endpoint string) ([]Bond, error) {
-	respData, err := c.post(c.buildURL(endpoint), securitiesBody)
+	return c.getFixedIncomeWith(ctx, endpoint, securitiesBody)
+}
+
+func (c *Client) getFixedIncomeWith(ctx context.Context, endpoint string, body []byte) ([]Bond, error) {
+	respData, err := c.post(ctx, c.buildURL(endpoint), body)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +124,7 @@ func parseBond(raw map[string]interface{}) Bond {
 		Group:          utils.GetString(raw, "securityType"),
 		Expiration:     utils.GetTime(raw, "maturityDate"),
 		DaysToMaturity: utils.GetInt64(raw, "daysToMaturity"),
+		Underlying:     utils.GetString(raw, "underlyingSymbol"),
 		Currency:       utils.GetString(raw, "denominationCcy"),
 		Market:         utils.GetString(raw, "market"),
 	}
@@ -107,7 +132,7 @@ func parseBond(raw map[string]interface{}) Bond {
 
 // GetBondIndices retrieves BYMA's fixed-income indices.
 func (c *Client) GetBondIndices(ctx context.Context) ([]BondIndex, error) {
-	respData, err := c.post(c.buildURL(pathBondIndices), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathBondIndices), plainBody)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +157,7 @@ func (c *Client) GetBondIndices(ctx context.Context) ([]BondIndex, error) {
 // GetBondCoupons retrieves the payment schedule (interest and amortization)
 // published for a bond, e.g. "GD30".
 func (c *Client) GetBondCoupons(ctx context.Context, symbol string) ([]BondCoupon, error) {
-	respData, err := c.post(c.buildURL(pathCoupons), symbolBody(symbol))
+	respData, err := c.post(ctx, c.buildURL(pathCoupons), symbolBody(symbol))
 	if err != nil {
 		return nil, err
 	}

@@ -23,14 +23,44 @@ func TestIntegrationRealAPI(t *testing.T) {
 	defer client.Close()
 	ctx := context.Background()
 
+	// Price checks only make sense while BYMA is trading. IsMarketOpen is
+	// false on weekends, holidays and outside hours, so those runs still
+	// check every endpoint but skip the "prices are live" assertions.
+	marketOpen, err := client.IsMarketOpen(ctx)
+	require.NoError(t, err, "Failed to get market-open from real API")
+	t.Logf("Market open: %v", marketOpen)
+
+	t.Run("MarketStatus", func(t *testing.T) {
+		serverTime, err := client.GetServerTime(ctx)
+		require.NoError(t, err)
+		assert.WithinDuration(t, time.Now(), serverTime, 5*time.Minute, "BYMA clock should be close to ours")
+		if !marketOpen {
+			t.Skip("market closed: skipping open-market consistency checks")
+		}
+		working, err := client.IsWorkingDay(ctx)
+		require.NoError(t, err)
+		assert.True(t, working, "market is open, so today must be a working day")
+		mt, err := client.GetMarketTime(ctx)
+		require.NoError(t, err)
+		// Small margin: market-open can flip a moment before or after the bell.
+		assert.True(t, serverTime.After(mt.Opens.Add(-5*time.Minute)) && serverTime.Before(mt.Closes.Add(5*time.Minute)),
+			"market is open, so %v should be within %v-%v", serverTime, mt.Opens, mt.Closes)
+	})
+
 	t.Run("GetBluechips", func(t *testing.T) {
 		bluechips, err := client.GetBluechips(ctx)
 		require.NoError(t, err, "Failed to get bluechips from real API")
-		assert.NotEmpty(t, bluechips, "Bluechips list should not be empty")
-		if len(bluechips) > 0 {
-			first := bluechips[0]
-			assert.NotEmpty(t, first.Symbol, "Security symbol should not be empty")
-			t.Logf("Retrieved %d bluechips, first symbol: %s", len(bluechips), first.Symbol)
+		require.NotEmpty(t, bluechips, "Bluechips list should not be empty")
+		assert.NotEmpty(t, bluechips[0].Symbol, "Security symbol should not be empty")
+		t.Logf("Retrieved %d bluechips, first symbol: %s", len(bluechips), bluechips[0].Symbol)
+		if marketOpen {
+			traded := 0
+			for _, b := range bluechips {
+				if b.Volume > 0 {
+					traded++
+				}
+			}
+			assert.Positive(t, traded, "market is open, so some bluechips should have volume")
 		}
 	})
 
@@ -102,11 +132,12 @@ func TestIntegrationRealAPI(t *testing.T) {
 	t.Run("GetCurrentQuote", func(t *testing.T) {
 		// BYMA moved to T+1 in 2024, so 48HS no longer quotes.
 		quote, err := client.GetCurrentQuote(ctx, "GGAL", Settlement24HS)
-		if err != nil {
-			t.Logf("Current quote may be empty outside market hours: %v", err)
-			return
+		if !marketOpen {
+			t.Skipf("market closed: quote may be empty (err=%v)", err)
 		}
+		require.NoError(t, err, "market is open, so GGAL should quote")
 		assert.Equal(t, "GGAL", quote.Symbol, "quote symbol mismatch")
+		assert.Positive(t, quote.Last, "market is open, so GGAL should have a price")
 		t.Logf("GGAL 24HS quote: last $%.2f, bid $%.2f, ask $%.2f", quote.Last, quote.Bid, quote.Ask)
 	})
 
@@ -232,6 +263,42 @@ func TestIntegrationRealAPI(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, found)
 		assert.Equal(t, "GGAL", found[0].Symbol)
+	})
+
+	t.Run("ReposLendingTrusts", func(t *testing.T) {
+		repos, err := client.GetRepos(ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, repos)
+		assert.NotEmpty(t, repos[0].Underlying, "repo underlying should be parsed")
+		lending, err := client.GetSecuritiesLending(ctx)
+		require.NoError(t, err)
+		t.Logf("repos: %d, lending: %d", len(repos), len(lending))
+		trusts, err := client.GetFinancialTrusts(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, trusts)
+	})
+
+	t.Run("CorporateGovernance", func(t *testing.T) {
+		gov, err := client.GetCorporateGovernance(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, gov)
+		plus, err := client.GetCorporateGovernancePlus(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, plus)
+	})
+
+	t.Run("GetInstrumentCatalog", func(t *testing.T) {
+		catalog, err := client.GetInstrumentCatalog(ctx)
+		require.NoError(t, err)
+		assert.Greater(t, len(catalog), 1000, "catalog should list thousands of instruments")
+		found := false
+		for _, c := range catalog {
+			if c.Code == "GGAL" {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "GGAL should be in the catalog")
 	})
 
 	t.Run("DeprecatedAliases", func(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 // "no_data", an empty *OHLCV is returned without raising an error so callers
 // can distinguish "no data" from transport failures.
 func (c *Client) GetHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
-	return c.fetchHistory(symbol, resolution, from, to)
+	return c.fetchHistory(ctx, symbol, resolution, from, to)
 }
 
 // GetHistoryLastDays is a convenience wrapper that requests daily bars for
@@ -32,28 +32,28 @@ func (c *Client) GetIntradayHistory(ctx context.Context, symbol string, resoluti
 	if resolution == ResolutionDaily || resolution == ResolutionWeekly || resolution == ResolutionMonthly {
 		return nil, fmt.Errorf("intraday resolution must be %q, %q or %q", Resolution1Min, Resolution5Min, Resolution60Min)
 	}
-	return c.fetchHistory(symbol, resolution, from, to)
+	return c.fetchHistory(ctx, symbol, resolution, from, to)
 }
 
 // GetIndexHistory retrieves OHLCV bars for a market index, e.g. "M" for the
 // S&P Merval or "G" for the general index (see GetIndices for symbols).
 // Index volume is always 0.
 func (c *Client) GetIndexHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
-	return c.fetchSeries(pathIndexHistory, symbol, resolution, from, to)
+	return c.fetchSeries(ctx, pathIndexHistory, symbol, resolution, from, to)
 }
 
-func (c *Client) fetchHistory(symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
-	return c.fetchSeries(pathHistorical, symbol, resolution, from, to)
+func (c *Client) fetchHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	return c.fetchSeries(ctx, pathHistorical, symbol, resolution, from, to)
 }
 
-func (c *Client) fetchSeries(endpoint, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+func (c *Client) fetchSeries(ctx context.Context, endpoint, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
 	params := url.Values{}
 	params.Set("symbol", symbol)
 	params.Set("resolution", string(resolution))
 	params.Set("from", strconv.FormatInt(from.Unix(), 10))
 	params.Set("to", strconv.FormatInt(to.Unix(), 10))
 
-	respData, err := c.get(c.buildURL(endpoint) + "?" + params.Encode())
+	respData, err := c.get(ctx, c.buildURL(endpoint)+"?"+params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history data: %w", err)
 	}
@@ -63,6 +63,9 @@ func (c *Client) fetchSeries(endpoint, symbol string, resolution Resolution, fro
 		return nil, fmt.Errorf("failed to parse history response: %w", err)
 	}
 
+	if resp.Status == "error" {
+		return nil, fmt.Errorf("history for %s: %s", symbol, resp.ErrMsg)
+	}
 	if resp.Status != "ok" || len(resp.Time) == 0 {
 		return &OHLCV{}, nil
 	}

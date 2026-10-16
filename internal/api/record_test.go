@@ -65,6 +65,14 @@ func TestRecordFixtures(t *testing.T) {
 		"coupons":        func() error { _, err := c.GetBondCoupons(ctx, "GD30"); return err },
 		"responsibles":   func() error { _, err := c.GetMarketResponsibles(ctx, "ALUA"); return err },
 		"search":         func() error { _, err := c.SearchInstruments(ctx, "GGAL"); return err },
+		"repos":          func() error { _, err := c.GetRepos(ctx); return err },
+		"lending":        func() error { _, err := c.GetSecuritiesLending(ctx); return err },
+		"trusts":         func() error { _, err := c.GetFinancialTrusts(ctx); return err },
+		"governance":     func() error { _, err := c.GetCorporateGovernance(ctx); return err },
+		"governance+":    func() error { _, err := c.GetCorporateGovernancePlus(ctx); return err },
+		"catalog":        func() error { _, err := c.GetInstrumentCatalog(ctx); return err },
+		"market-open":    func() error { _, err := c.IsMarketOpen(ctx); return err },
+		"server-time":    func() error { _, err := c.GetServerTime(ctx); return err },
 		"index-history": func() error {
 			_, err := c.GetIndexHistory(ctx, "M", ResolutionDaily, to.AddDate(0, 0, -30), to)
 			return err

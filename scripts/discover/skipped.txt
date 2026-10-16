@@ -39,6 +39,8 @@ bnown/seriesHistoricas/iamc/indices        # 400 (2026-10-16)
 bnown/seriesHistoricas/indices             # 400 (2026-10-16)
 get-market-data                            # 400 (2026-10-16)
 bnown/iamc/bonos                           # times out (2026-10-16)
+getIndexValue                              # answers [null] for any symbol (2026-10-16)
+chart/iamc-index-historical-series/history # answers "Error interno al obtener datos historicos del IAMC" for every symbol tried (2026-10-16)
 
 # Web app internals, not market data
 basic-account                              # account flag for the web UI

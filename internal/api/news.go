@@ -10,7 +10,7 @@ import (
 
 // GetNews retrieves market news
 func (c *Client) GetNews(ctx context.Context) ([]News, error) {
-	respData, err := c.post(c.buildURL(pathNews), []byte(`{"Content-Type":"application/json"}`))
+	respData, err := c.post(ctx, c.buildURL(pathNews), []byte(`{"Content-Type":"application/json"}`))
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (c *Client) GetNews(ctx context.Context) ([]News, error) {
 
 // GetIncomeStatement retrieves income statement data for a specific ticker
 func (c *Client) GetIncomeStatement(ctx context.Context, ticker string) ([]IncomeStatement, error) {
-	respData, err := c.post(c.buildURL(pathBalances), []byte(fmt.Sprintf(`{"symbol": "%s", "Content-Type": "application/json"}`, ticker)))
+	respData, err := c.post(ctx, c.buildURL(pathBalances), []byte(fmt.Sprintf(`{"symbol": "%s", "Content-Type": "application/json"}`, ticker)))
 	if err != nil {
 		return nil, err
 	}

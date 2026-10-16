@@ -19,18 +19,23 @@ type Client interface {
 
 	// Market status and general info
 	IsWorkingDay(ctx context.Context) (bool, error)
+	IsMarketOpen(ctx context.Context) (bool, error)
+	GetServerTime(ctx context.Context) (time.Time, error)
 	GetMarketTime(ctx context.Context) (MarketTime, error)
 	GetIndices(ctx context.Context) ([]Index, error)
 	MarketResume(ctx context.Context) ([]MarketSummary, error)
 	GetMEPIndices(ctx context.Context) ([]Index, error)
 	GetTopMovers(ctx context.Context) (*TopMovers, error)
 	SearchInstruments(ctx context.Context, query string) ([]InstrumentMatch, error)
+	GetInstrumentCatalog(ctx context.Context) ([]CatalogInstrument, error)
 
 	// Securities
 	GetBluechips(ctx context.Context) ([]Security, error)
 	GetGalpones(ctx context.Context) ([]Security, error)
 	GetCedears(ctx context.Context) ([]Security, error)
 	GetETFs(ctx context.Context) ([]Security, error)
+	GetCorporateGovernance(ctx context.Context) ([]Security, error)
+	GetCorporateGovernancePlus(ctx context.Context) ([]Security, error)
 
 	// Fixed Income
 	GetBonds(ctx context.Context) ([]Bond, error)
@@ -43,6 +48,9 @@ type Client interface {
 	GetSenebiBonds(ctx context.Context) ([]Bond, error)
 	GetSenebiLetters(ctx context.Context) ([]Bond, error)
 	GetSenebiCorporateBonds(ctx context.Context) ([]Bond, error)
+	GetFinancialTrusts(ctx context.Context) ([]Bond, error)
+	GetRepos(ctx context.Context) ([]Bond, error)
+	GetSecuritiesLending(ctx context.Context) ([]Bond, error)
 	GetBondIndices(ctx context.Context) ([]BondIndex, error)
 	GetBondCoupons(ctx context.Context, symbol string) ([]BondCoupon, error)
 
@@ -156,6 +164,7 @@ type (
 	TopMovers         = api.TopMovers
 	MarketResponsible = api.MarketResponsible
 	InstrumentMatch   = api.InstrumentMatch
+	CatalogInstrument = api.CatalogInstrument
 )
 
 // =============================================================================
