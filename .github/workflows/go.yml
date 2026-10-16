@@ -38,6 +38,9 @@ jobs:
       - name: Test
         run: go test -race -v ./...
 
+      - name: Vulnerability check
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
   release:
     name: Release
     needs: test
