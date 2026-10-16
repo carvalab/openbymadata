@@ -1,61 +1,100 @@
 # Keeping up with the BYMA API
 
 BYMA changes the Open Data API without notice: fields get renamed, endpoints
-start requiring headers or a login. This is the routine for catching and
-fixing that.
+start requiring headers or a login, new endpoints show up in their web app.
+This is the routine for catching that and deciding what to **add**,
+**remove** or **edit**.
 
 ## What runs on its own
 
-The **Integration** workflow runs every weekday at 14:00 ART, while the
-market is open:
+| Workflow | When | Catches |
+|---|---|---|
+| **Integration** | weekdays 14:00 ART | a public method failing against the live API (`integration_test.go`), or a field BYMA stopped sending (drift check in `internal/api/record_test.go`) |
+| **Discover** | Mondays 12:00 ART | endpoints BYMA's web app calls that we don't, endpoints it stopped calling, and `Options` header changes. Opens or updates the issue "BYMA API: endpoints to add, remove or fix", and closes it once the diff is clean |
 
-1. `integration_test.go` calls every public method against the live API.
-2. The drift check (`internal/api/record_test.go`) compares each live
-   response with the recorded fixture. It fails when a field the fixtures
-   have is gone, and logs fields that are new.
+A red **Live API** badge or an open Discover issue means there's work.
 
-A red **Live API** badge means one of the two broke. Start from its log.
+## The discovery tool
 
-## When something breaks
+BYMA's web app (open.bymadata.com.ar) is the reference client. Its
+JavaScript bundle lists every endpoint, the `Options` header it needs and the
+request body it sends. `scripts/discover` reads the bundle and compares it
+with `internal/api/endpoints.go`:
 
-1. **Find what changed.**
+```bash
+go run ./scripts/discover                    # diff only
+go run ./scripts/discover -probe             # also call each new endpoint live
+go run ./scripts/discover -probe -recheck    # also re-call the skipped ones
+```
+
+The report has three sections:
+
+- **New endpoints**: with their header, request body and, with `-probe`,
+  the live status and field names. Either implement each one or add it to
+  `scripts/discover/skipped.txt` with a reason and date.
+- **Endpoints the web app no longer calls**: candidates for removal.
+- **Options header mismatches**: fix `sectionHeader`.
+
+It exits 1 when any section is non-empty, 0 when there's nothing to do.
+
+## Adding an endpoint
+
+1. **Look at the real response.** `-probe` shows the status and fields. For
+   one endpoint, call it with the client's headers:
+   ```bash
+   curl -s -X POST https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/cauciones \
+     -H 'Content-Type: application/json' -H 'Options: renta-fija' \
+     -H 'Origin: https://open.bymadata.com.ar' -d '{"Content-Type":"application/json"}' | head -c 600
+   ```
+   If the probe returns 405, the endpoint is a GET with query parameters
+   (chart endpoints work this way). If it returns an empty list, try the
+   body the bundle shows before giving up.
+2. **Add the path** as a `path…` constant and its section to
+   `sectionHeader` in `internal/api/endpoints.go`.
+3. **Parse it.** Reuse `parseSecurity`, `parseBond`, `parseOption` or
+   `parseIndex` when the record has the usual market fields. Use
+   `parseAPIResponse`, which accepts both bare lists and `{"data": [...]}`.
+4. **Expose it.** Add the method to the `Client` interface in `types.go`.
+   Market-wide lists get a cached wrapper in `client.go`; per-symbol calls
+   are served by the embedded `*api.Client`.
+5. **Record a fixture.** Add the call to `TestRecordFixtures`, then:
+   ```bash
+   RECORD_WRITE=1 go test -tags record -run TestRecordFixtures ./internal/api/
+   git checkout -- internal/api/testdata   # keep existing fixtures; new files stay
+   ```
+6. **Test it**: a unit test against the fixture, and a live assertion in
+   `integration_test.go`.
+7. **Document it** in both READMEs.
+8. **Release a minor version.** New `Client` methods break custom
+   implementations of the interface.
+
+## Removing an endpoint
+
+When Discover lists an endpoint under "no longer calls", or a method starts
+failing for good (login, 404):
+
+1. Confirm with a few live calls over a day or two; BYMA also fails
+   transiently.
+2. Keep the method, mark it `// Deprecated:` with the reason, and make the
+   docs say so. Delete it only in a later minor version.
+3. Add a "Known limitation" note to the release.
+
+## Editing (a field or header changed)
+
+1. Find what changed:
    ```bash
    INTEGRATION_TEST=true go test -tags integration -run Integration -v ./...
    go test -tags record -run TestRecordFixtures -v ./internal/api/
+   go run ./scripts/discover
    ```
-   Lines starting with `DRIFT` name the file and field.
-
-2. **If an endpoint returns 400/401, look at the web app.** BYMA's own site
-   is the reference client.
-   ```bash
-   scripts/byma-webapp-endpoints.sh
-   ```
-   It prints the `Options` header the site sends per endpoint (compare with
-   `sectionHeader` in `internal/api/endpoints.go`) and the endpoints this
-   library doesn't call yet. For request bodies, search the downloaded
-   `main.*.js` for the endpoint name.
-
-3. **Probe by hand** with the same headers the client sends, for example:
-   ```bash
-   curl -s -X POST https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/bnown/byma-ads \
-     -H 'Content-Type: application/json' -H 'Options: notices-and-events' \
-     -H 'Origin: https://open.bymadata.com.ar' -d '{"Content-Type":"application/json"}'
-   ```
-
-4. **Fix the parser**, then re-record the fixtures so the tests use the new
-   shape:
-   ```bash
-   RECORD_WRITE=1 go test -tags record -run TestRecordFixtures ./internal/api/
-   go test ./...
-   ```
-   Prices in the new fixtures will differ, so update the expected values
-   in `internal/api/api_test.go` and `client_fixture_test.go`.
-
-5. **Add a live assertion** for the fix in `integration_test.go`, so it
-   can't silently regress.
-
-6. **Release.** Open a PR, wait for Test and Live API, merge, tag
-   `vX.Y.Z`, and put upgrade notes at the top of the GitHub release.
+   `DRIFT` lines name the file and field; Discover shows header changes.
+2. Fix the parser, accepting both the old and the new field where it's
+   cheap (see `totalNegotiated`).
+3. Re-record the affected fixtures with `RECORD_WRITE=1`. Prices will
+   differ, so update the expected values in `internal/api/api_test.go`
+   and `client_fixture_test.go`.
+4. Add a live assertion in `integration_test.go` so it can't regress.
+5. Release a patch version, with upgrade notes at the top of the release.
 
 ## Things already learned
 
@@ -72,8 +111,8 @@ A red **Live API** badge means one of the two broke. Start from its log.
 - `bnown/bolsar/balances` redirects to an OAuth login (401).
 - Futures prices come per 1000 and the client scales them.
 - The free intraday endpoint returns delayed data only, a few bars a day.
-- Checked and skipped (2026-10-16): `bnown/analiticos/rentafija`,
-  `option-pricing` and `cauciones` return empty lists even with the web
-  app's request bodies; `relevant-facts`, `corporateevent/calendar`,
-  `financial-trusts`, `local-stocks-adrs` and `iamc/bonos` need a login.
+- Use the request body from the bundle, not a guessed one. `cauciones`
+  returned an empty list with the securities body and 128 records with the
+  web app's.
+- Skipped endpoints and why: `scripts/discover/skipped.txt`.
 - `denominationCcy` can be `"EXT"` besides `"ARS"`; meaning unconfirmed.
