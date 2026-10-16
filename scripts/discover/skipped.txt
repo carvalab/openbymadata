@@ -1,0 +1,49 @@
+# Endpoints from the BYMA web app that this library does not implement.
+# Format: path  # reason (checked date). `go run ./scripts/discover -probe -recheck`
+# calls them again; "empty" ones may start returning data.
+
+# Need a BYMA login (HTTP 401)
+all-instrument-select                      # 401; the catalog is served by instrumentproduct/instrument/all-instrument-select (2026-10-16)
+iamc/bonos                                 # 401 (2026-10-16)
+financial-trusts                           # 401; trusts are also at bnown/seriesHistoricas/fideicomisos (2026-10-16)
+relevant-facts                             # 401 (2026-10-16)
+newsletters                                # 401 (2026-10-16)
+prospects                                  # 401 (2026-10-16)
+export                                     # 401, spreadsheet export (2026-10-16)
+historical-series/symbols                  # 401, TradingView symbol metadata (2026-10-16)
+index-historical-series/symbols            # 401, TradingView symbol metadata (2026-10-16)
+index-bonds-historical-series/history      # 401 (2026-10-16)
+index-bonds-historical-series/symbols      # 401 (2026-10-16)
+chart/iamc-index-historical-series         # parent of history/symbols, 401 (2026-10-16)
+chart/iamc-index-historical-series/symbols # TradingView symbol metadata (2026-10-16)
+
+# Empty on the free API, even with the web app's request body
+bnown/analiticos/rentafija                 # empty (2026-10-16)
+bnown/fichatecnica/fideicomisos            # empty (2026-10-16)
+bnown/iamc/composicion                     # empty (2026-10-16)
+bnown/instrument-type                      # empty (2026-10-16)
+bnown/seriesHistoricas/calculoanalitico    # empty (2026-10-16)
+bnown/seriesHistoricas/iamc/indices/panel  # empty (2026-10-16)
+option-pricing                             # empty (2026-10-16)
+getOptionsBySymbol                         # empty body (2026-10-16)
+getFuturesBySymbol                         # empty body (2026-10-16)
+loans-short-sale                           # empty (2026-10-16)
+plazo-lote                                 # empty (2026-10-16)
+
+# Rejected (HTTP 400) or timing out with the web app's body
+bnown/newsletters                          # 400 (2026-10-16)
+bnown/prospects                            # 400 (2026-10-16)
+bnown/seriesHistoricas/especies            # 400 (2026-10-16)
+bnown/seriesHistoricas/export              # 400, spreadsheet export (2026-10-16)
+bnown/seriesHistoricas/iamc/indices        # 400 (2026-10-16)
+bnown/seriesHistoricas/indices             # 400 (2026-10-16)
+get-market-data                            # 400 (2026-10-16)
+bnown/iamc/bonos                           # times out (2026-10-16)
+
+# Web app internals, not market data
+basic-account                              # account flag for the web UI
+email-support-contact                      # sends an email to BYMA support
+favourite-assets/toggle                    # user favourites
+ui/configuration/pane                      # web UI layout
+ui/configuration/positions/for             # web UI layout
+sba/download                               # file download; used through download links (descarga/archivo ids)
