@@ -13,11 +13,11 @@ import "github.com/carvalab/openbymadata"
 // Caching is enabled by default
 client := openbymadata.NewClient()
 
-// Or with custom options (cache still enabled)
+// Or with custom options (set EnableCache yourself; a zero value turns it off)
 client := openbymadata.NewClient(&openbymadata.ClientOptions{
     Timeout:       15 * time.Second,
     RetryAttempts: 2,
-    EnableCache:   true, // This is the default
+    EnableCache:   true, // set it explicitly when passing your own options
 })
 
 // To disable caching (not recommended)
@@ -181,10 +181,9 @@ func main() {
 ### Speed Improvements
 - **First call**: ~500ms-2s (API call)
 - **Cached calls**: ~1-5ms (memory access)
-- **Speed gain**: 100-2000x faster
 
 ### Bandwidth Savings
-- Reduces API calls by up to 95%
+- Fewer API calls for repeated lookups
 - Lower bandwidth usage
 - Faster response times
 

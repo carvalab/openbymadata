@@ -13,7 +13,8 @@ func (c *Client) GetBonds(ctx context.Context) ([]Bond, error) {
 	return c.getFixedIncome(ctx, pathPublicBonds)
 }
 
-// GetShortTermBonds retrieves short-term government bonds (LEBACs)
+// GetShortTermBonds retrieves short-term government bills (Letras). The
+// upstream endpoint is still named "lebacs".
 func (c *Client) GetShortTermBonds(ctx context.Context) ([]Bond, error) {
 	return c.getFixedIncome(ctx, pathLetters)
 }

@@ -1,5 +1,14 @@
 # OpenBYMAData Go Library
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/carvalab/openbymadata.svg)](https://pkg.go.dev/github.com/carvalab/openbymadata)
+[![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
+[![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/carvalab/openbymadata)](https://goreportcard.com/report/github.com/carvalab/openbymadata)
+[![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> 🇦🇷 **Español:** [Leer el README en español →](README.md)
+
 A comprehensive Go library for accessing financial data from the Buenos Aires Stock Exchange (BYMA - Bolsas y Mercados Argentinos) through their free public API.
 
 Provides strongly-typed, concurrent-safe access to Argentine financial market data with built-in caching and performance optimizations.
@@ -7,7 +16,7 @@ Provides strongly-typed, concurrent-safe access to Argentine financial market da
 ## Features
 
 ### 🚀 **Performance & Design**
-- **5-Minute Smart Caching**: Automatic caching reduces API calls by 95% and improves speed by 100x
+- **5-Minute Smart Caching**: Repeated calls are served from memory instead of hitting the API again
 - **Individual Ticker Lookups**: Get specific securities without fetching entire collections
 - **Batch Operations**: Efficiently retrieve multiple securities in a single operation
 - **Strongly Typed**: No more generic `interface{}` - proper structs for each financial instrument
@@ -18,7 +27,7 @@ Provides strongly-typed, concurrent-safe access to Argentine financial market da
 
 ### 📊 **Market Data Coverage**
 - **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs  
-- **Fixed Income**: Government bonds, corporate bonds, short-term bonds (LEBACs)
+- **Fixed Income**: Government bonds, corporate bonds, short-term bills (Letras)
 - **Derivatives**: Options contracts, futures
 - **Historical Data**: Time series with OHLCV (Open, High, Low, Close, Volume) for charting
 - **Market Data**: Indices, market summary, working day status
@@ -118,7 +127,7 @@ mt, err := client.GetMarketTime(ctx)
 fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
 
-**💾 Smart Caching:** 100x speed improvement, 95% API call reduction
+**💾 Smart Caching:** repeated calls within 5 minutes are answered from memory
 
 ### Traditional Collection-Based Access
 
@@ -264,7 +273,7 @@ Market Indices (15):
    • Individual ticker lookups (GetCedear, GetBluechip, GetSecurity)
    • Efficient batch operations (GetMultipleSecurities)
    • Historical data & charting (GetHistory, GetHistoryLastDays)
-   • 5-minute automatic caching (reduces API calls by 95%)
+   • 5-minute automatic caching (fewer API calls)
    • API endpoint mapping:
      - GetBluechips()  → 'leading-equity' endpoint
      - GetGalpones()   → 'general-equity' endpoint
@@ -394,7 +403,7 @@ cedears, err := client.GetCedears(ctx)      // → 'cedears' endpoint
 // Government bonds
 bonds, err := client.GetBonds(ctx)
 
-// Short-term bonds (LEBACs)
+// Short-term bills (Letras)
 shortTermBonds, err := client.GetShortTermBonds(ctx)
 
 // Corporate bonds
@@ -494,7 +503,14 @@ go test -cover ./...
 
 # Run benchmarks
 go test -bench=. ./...
+
+# Run against the live BYMA API
+INTEGRATION_TEST=true go test -tags integration -run Integration ./...
 ```
+
+### Live API Status
+
+The [Integration workflow](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml) runs the suite against the real BYMA API every weekday while the market is open, so the **Live API** badge above tells you whether the upstream API still matches this library.
 
 ### Test Structure
 
@@ -549,11 +565,11 @@ if err != nil {
 
 ## Performance & Caching
 
-### 🚀 5-Minute Smart Caching (NEW!)
+### 🚀 5-Minute Smart Caching
 
 - **Automatic Caching**: All data cached for 5 minutes by default
-- **100x Speed Improvement**: Cached calls take microseconds vs API calls in milliseconds
-- **95% API Call Reduction**: Dramatically reduces bandwidth and rate limiting
+- **Fast Repeat Calls**: Cached calls take microseconds instead of a network round trip
+- **Fewer API Calls**: Less load on BYMA and less risk of rate limiting
 - **Thread-Safe**: Safe for concurrent access across multiple goroutines
 - **Fresh Data Guaranteed**: Cache automatically expires after 5 minutes
 
@@ -576,7 +592,7 @@ fmt.Printf("First call: %v\n", time.Since(start)) // ~100ms
 // Second call - returns from cache (fast!)
 start = time.Now()
 aapl, _ = client.GetCedear(ctx, "AAPL")
-fmt.Printf("Cached call: %v\n", time.Since(start)) // ~50µs (100x faster!)
+fmt.Printf("Cached call: %v\n", time.Since(start)) // microseconds, no network call
 
 // Multiple securities use shared cache efficiently
 securities, _ := client.GetMultipleSecurities(ctx, []string{"AAPL", "MSFT", "GOOGL"})

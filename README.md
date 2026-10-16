@@ -1,15 +1,22 @@
 # Librería OpenBYMAData para Go
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/carvalab/openbymadata.svg)](https://pkg.go.dev/github.com/carvalab/openbymadata)
+[![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
+[![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/carvalab/openbymadata)](https://goreportcard.com/report/github.com/carvalab/openbymadata)
+[![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> 🇬🇧 **English:** Go client for the BYMA (Buenos Aires stock exchange) free market data API. [Read the English README →](README.en.md)
+
 Una librería completa en Go para acceder a datos financieros de la Bolsa de Comercio de Buenos Aires (BYMA - Bolsas y Mercados Argentinos) a través de su API pública gratuita.
 
 Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurrencia segura, caché incorporado y optimizaciones de rendimiento.
 
-*[English version available here](README.en.md)*
-
 ## Características
 
 ### 🚀 **Rendimiento y Diseño**
-- **Caché Inteligente de 5 Minutos**: El almacenamiento en caché automático reduce las llamadas a la API en un 95% y mejora la velocidad 100 veces
+- **Caché Inteligente de 5 Minutos**: Las llamadas repetidas se responden desde memoria en lugar de volver a pegarle a la API
 - **Búsquedas Individuales de Tickers**: Obtené valores específicos sin necesidad de recuperar colecciones completas
 - **Operaciones por Lotes**: Recuperá múltiples valores de forma eficiente en una sola operación
 - **Tipado Fuerte**: No más `interface{}` genéricos - estructuras adecuadas para cada instrumento financiero
@@ -20,7 +27,7 @@ Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurr
 
 ### 📊 **Cobertura de Datos del Mercado**
 - **Acciones**: Líderes (blue chips), Panel general (galpones), CEDEARs  
-- **Renta Fija**: Bonos gubernamentales, bonos corporativos, letras de corto plazo (LEBACs)
+- **Renta Fija**: Bonos gubernamentales, bonos corporativos, letras de corto plazo
 - **Derivados**: Contratos de opciones, futuros
 - **Datos Históricos**: Series temporales con OHLCV (Open, High, Low, Close, Volume) para gráficos
 - **Datos de Mercado**: Índices, resumen del mercado, estado de días hábiles
@@ -120,7 +127,7 @@ mt, err := client.GetMarketTime(ctx)
 fmt.Println(mt.OpeningText, mt.ClosingText, mt.Timezone)
 ```
 
-**💾 Caché Inteligente:** Mejora de 100x en velocidad, reducción del 95% en llamadas a la API
+**💾 Caché Inteligente:** las llamadas repetidas dentro de 5 minutos se responden desde memoria
 
 ### Acceso Tradicional Basado en Colecciones
 
@@ -266,7 +273,7 @@ Market Indices (15):
    • Individual ticker lookups (GetCedear, GetBluechip, GetSecurity)
    • Efficient batch operations (GetMultipleSecurities)
    • Historical data & charting (GetHistory, GetHistoryLastDays)
-   • 5-minute automatic caching (reduces API calls by 95%)
+   • 5-minute automatic caching (fewer API calls)
    • API endpoint mapping:
      - GetBluechips()  → 'leading-equity' endpoint
      - GetGalpones()   → 'general-equity' endpoint
@@ -396,7 +403,7 @@ cedears, err := client.GetCedears(ctx)      // → endpoint 'cedears'
 // Bonos gubernamentales
 bonds, err := client.GetBonds(ctx)
 
-// Letras de corto plazo (LEBACs)
+// Letras de corto plazo
 shortTermBonds, err := client.GetShortTermBonds(ctx)
 
 // Bonos corporativos
@@ -496,7 +503,14 @@ go test -cover ./...
 
 # Correr benchmarks
 go test -bench=. ./...
+
+# Correr contra la API real de BYMA
+INTEGRATION_TEST=true go test -tags integration -run Integration ./...
 ```
+
+### Estado de la API en Vivo
+
+El [workflow de Integration](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml) corre la suite contra la API real de BYMA todos los días hábiles con el mercado abierto, así que el badge **Live API** de arriba te dice si la API de BYMA sigue siendo compatible con esta librería.
 
 ### Estructura de Tests
 
@@ -551,11 +565,11 @@ if err != nil {
 
 ## Rendimiento y Caché
 
-### 🚀 Caché Inteligente de 5 Minutos (¡NUEVO!)
+### 🚀 Caché Inteligente de 5 Minutos
 
 - **Caché Automático**: Todos los datos se almacenan en caché por 5 minutos por defecto
-- **Mejora de Velocidad 100x**: Las llamadas en caché toman microsegundos vs llamadas a la API en milisegundos
-- **Reducción del 95% en Llamadas a la API**: Reduce drásticamente el ancho de banda y el rate limiting
+- **Llamadas Repetidas Rápidas**: Las llamadas en caché tardan microsegundos en lugar de un viaje por la red
+- **Menos Llamadas a la API**: Menos carga sobre BYMA y menos riesgo de rate limiting
 - **Thread-Safe**: Seguro para acceso concurrente a través de múltiples goroutines
 - **Datos Frescos Garantizados**: El caché expira automáticamente después de 5 minutos
 
@@ -578,7 +592,7 @@ fmt.Printf("First call: %v\n", time.Since(start)) // ~100ms
 // Second call - returns from cache (fast!)
 start = time.Now()
 aapl, _ = client.GetCedear(ctx, "AAPL")
-fmt.Printf("Cached call: %v\n", time.Since(start)) // ~50µs (100x faster!)
+fmt.Printf("Cached call: %v\n", time.Since(start)) // microsegundos, sin llamada de red
 
 // Multiple securities use shared cache efficiently
 securities, _ := client.GetMultipleSecurities(ctx, []string{"AAPL", "MSFT", "GOOGL"})
