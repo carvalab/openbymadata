@@ -1,0 +1,29 @@
+[
+ {
+  "description": "GRUPO FINANCIERO GALICIA - ORD. B 1 V.",
+  "market": "BYMA",
+  "oid_": 29,
+  "presentation": "GGAL",
+  "symbol": "GGAL",
+  "type": "Accion",
+  "vencimiento": "24hs"
+ },
+ {
+  "description": "GGALB",
+  "market": "BYMA",
+  "oid_": 5554,
+  "presentation": "GGALB",
+  "symbol": "GGALB",
+  "type": "Accion",
+  "vencimiento": "24hs"
+ },
+ {
+  "description": "GRUPO FINANCIERO GALICIA ORD. 1V. - CTA. EXT.",
+  "market": "BYMA",
+  "oid_": 1505,
+  "presentation": "GGALC",
+  "symbol": "GGALC",
+  "type": "Accion",
+  "vencimiento": "24hs"
+ }
+]

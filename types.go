@@ -22,16 +22,29 @@ type Client interface {
 	GetMarketTime(ctx context.Context) (MarketTime, error)
 	GetIndices(ctx context.Context) ([]Index, error)
 	MarketResume(ctx context.Context) ([]MarketSummary, error)
+	GetMEPIndices(ctx context.Context) ([]Index, error)
+	GetTopMovers(ctx context.Context) (*TopMovers, error)
+	SearchInstruments(ctx context.Context, query string) ([]InstrumentMatch, error)
 
 	// Securities
 	GetBluechips(ctx context.Context) ([]Security, error)
 	GetGalpones(ctx context.Context) ([]Security, error)
 	GetCedears(ctx context.Context) ([]Security, error)
+	GetETFs(ctx context.Context) ([]Security, error)
 
 	// Fixed Income
 	GetBonds(ctx context.Context) ([]Bond, error)
 	GetShortTermBonds(ctx context.Context) ([]Bond, error)
 	GetCorporateBonds(ctx context.Context) ([]Bond, error)
+	GetGreenBonds(ctx context.Context) ([]Bond, error)
+	GetSocialBonds(ctx context.Context) ([]Bond, error)
+	GetSustainabilityBonds(ctx context.Context) ([]Bond, error)
+	GetLinkedBonds(ctx context.Context) ([]Bond, error)
+	GetSenebiBonds(ctx context.Context) ([]Bond, error)
+	GetSenebiLetters(ctx context.Context) ([]Bond, error)
+	GetSenebiCorporateBonds(ctx context.Context) ([]Bond, error)
+	GetBondIndices(ctx context.Context) ([]BondIndex, error)
+	GetBondCoupons(ctx context.Context, symbol string) ([]BondCoupon, error)
 
 	// Derivatives
 	GetOptions(ctx context.Context) ([]Option, error)
@@ -59,12 +72,14 @@ type Client interface {
 	GetHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error)
 	GetHistoryLastDays(ctx context.Context, symbol string, days int) (*OHLCV, error)
 	GetIntradayHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error)
+	GetIndexHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error)
 
 	// Company metadata
 	GetCompanyInfo(ctx context.Context, symbol string) (*CompanyInfo, error)
 	GetEquityProfile(ctx context.Context, symbol string) (*EquityProfile, error)
 	GetCompanyManagement(ctx context.Context, symbol string) ([]CompanyDirector, error)
 	GetCompanyBalance(ctx context.Context, symbol string) ([]CompanyBalance, error)
+	GetMarketResponsibles(ctx context.Context, symbol string) ([]MarketResponsible, error)
 
 	// Deprecated aliases
 	GetLeadingEquity(ctx context.Context) ([]Security, error)
@@ -121,21 +136,26 @@ func ParseSettlement(value string) (Settlement, bool) {
 // =============================================================================
 
 type (
-	Security        = api.Security
-	Bond            = api.Bond
-	Option          = api.Option
-	Future          = api.Future
-	Index           = api.Index
-	MarketSummary   = api.MarketSummary
-	News            = api.News
-	IncomeStatement = api.IncomeStatement
-	OHLCV           = api.OHLCV
-	MarketTime      = api.MarketTime
-	CurrentQuote    = api.CurrentQuote
-	CompanyInfo     = api.CompanyInfo
-	EquityProfile   = api.EquityProfile
-	CompanyDirector = api.CompanyDirector
-	CompanyBalance  = api.CompanyBalance
+	Security          = api.Security
+	Bond              = api.Bond
+	Option            = api.Option
+	Future            = api.Future
+	Index             = api.Index
+	MarketSummary     = api.MarketSummary
+	News              = api.News
+	IncomeStatement   = api.IncomeStatement
+	OHLCV             = api.OHLCV
+	MarketTime        = api.MarketTime
+	CurrentQuote      = api.CurrentQuote
+	CompanyInfo       = api.CompanyInfo
+	EquityProfile     = api.EquityProfile
+	CompanyDirector   = api.CompanyDirector
+	CompanyBalance    = api.CompanyBalance
+	BondIndex         = api.BondIndex
+	BondCoupon        = api.BondCoupon
+	TopMovers         = api.TopMovers
+	MarketResponsible = api.MarketResponsible
+	InstrumentMatch   = api.InstrumentMatch
 )
 
 // =============================================================================

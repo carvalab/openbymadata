@@ -1,0 +1,24 @@
+{
+ "content": {
+  "page_count": 1,
+  "page_number": 1,
+  "page_size": 50,
+  "total_elements_count": 2
+ },
+ "data": [
+  {
+   "cargo": "Titular",
+   "cargoEmpresa": "",
+   "fechaDesignacion": "2001-11-30 00:00:00.0",
+   "responsableMercado": "Martínez Costa, Alberto Eduardo"
+  },
+  {
+   "cargo": "Suplente",
+   "cargoEmpresa": "",
+   "fechaDesignacion": "2006-07-12 00:00:00.0",
+   "responsableMercado": "Falcón, Miguel Juan"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

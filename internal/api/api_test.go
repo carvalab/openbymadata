@@ -43,6 +43,26 @@ func fixtureServer(t *testing.T) *httptest.Server {
 	return srv
 }
 
+// fixtureServerWith answers every request with body.
+func fixtureServerWith(t *testing.T, body string) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// fixtureServerStatus answers every request with an empty response and code.
+func fixtureServerStatus(t *testing.T, code int) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(code)
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
 func newTestClient(baseURL string) *Client {
 	return New(&ClientOptions{BaseURL: baseURL, Timeout: 5 * time.Second, Logger: nopLogger{}})
 }

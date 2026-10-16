@@ -1,0 +1,36 @@
+{
+ "content": {
+  "page_count": 1,
+  "page_number": 1,
+  "page_size": 50,
+  "total_elements_count": 10
+ },
+ "data": [
+  {
+   "closePrice": 686692.991342,
+   "currency": "ARS",
+   "date_": "2026-08-28 00:00:00.0",
+   "description": "Subíndice de Bonos Cortos emitidos en dólares",
+   "symbol": "COR_DOL",
+   "varianza": 1.00027433
+  },
+  {
+   "closePrice": 1175.764748,
+   "currency": "USD",
+   "date_": "2026-08-28 00:00:00.0",
+   "description": "Subíndice de Bonos Cortos emitidos en dólares",
+   "symbol": "COR_DOL",
+   "varianza": 1.00028084
+  },
+  {
+   "closePrice": 811805.050472,
+   "currency": "ARS",
+   "date_": "2026-08-28 00:00:00.0",
+   "description": "Subíndice de Bonos Cortos emitidos en pesos",
+   "symbol": "COR_PES",
+   "varianza": 1.00275022
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}
