@@ -280,11 +280,11 @@ func main() {
 			marketTime.OpeningText, marketTime.ClosingText, marketTime.Timezone)
 	}
 
-	quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement48HS)
+	quote, err := client.GetCurrentQuote(ctx, "GGAL", openbymadata.Settlement24HS)
 	if err != nil {
 		fmt.Printf("💲 Current quote for GGAL: %v\n", err)
 	} else {
-		fmt.Printf("💲 GGAL (48HS): last $%.2f, bid $%.2f, ask $%.2f\n",
+		fmt.Printf("💲 GGAL (24HS): last $%.2f, bid $%.2f, ask $%.2f\n",
 			quote.Last, quote.Bid, quote.Ask)
 	}
 
@@ -302,7 +302,7 @@ func main() {
 		fmt.Printf("👥 ALUA management entries: %d\n", len(directors))
 	}
 
-	intraday, err := client.GetIntradayHistory(ctx, "GGAL", openbymadata.Resolution5Min, threeMonthsAgo, now)
+	intraday, err := client.GetIntradayHistory(ctx, "GGAL 24HS", openbymadata.Resolution5Min, threeMonthsAgo, now)
 	if err != nil {
 		log.Printf("Error getting intraday data: %v", err)
 	} else {
@@ -311,7 +311,7 @@ func main() {
 
 	// Get historical data for SPY (S&P 500 ETF) - last 30 days
 	fmt.Printf("📊 Historical Data for SPY (last 30 days):\n")
-	historyData, err := client.GetHistoryLastDays(ctx, "SPY", 30)
+	historyData, err := client.GetHistoryLastDays(ctx, "SPY 24HS", 30)
 	if err != nil {
 		log.Printf("Error getting historical data: %v", err)
 	} else {
@@ -330,7 +330,7 @@ func main() {
 
 	// Get custom date range historical data (weekly data)
 	fmt.Printf("\n📅 Custom Date Range (Weekly data - last 3 months):\n")
-	weeklyData, err := client.GetHistory(ctx, "AAPL", openbymadata.ResolutionWeekly, threeMonthsAgo, now)
+	weeklyData, err := client.GetHistory(ctx, "AAPL 24HS", openbymadata.ResolutionWeekly, threeMonthsAgo, now)
 	if err != nil {
 		log.Printf("Error getting weekly data: %v", err)
 	} else {

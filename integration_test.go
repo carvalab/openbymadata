@@ -78,38 +78,33 @@ func TestIntegrationRealAPI(t *testing.T) {
 
 	t.Run("GetHistory", func(t *testing.T) {
 		to := time.Now()
-		from := to.AddDate(0, 0, -7)
-		history, err := client.GetHistory(ctx, "GGAL", ResolutionDaily, from, to)
-		if err != nil {
-			t.Logf("History test skipped or failed: %v", err)
-			return
-		}
-		assert.NotNil(t, history, "History should not be nil")
-		if len(history.Time) > 0 {
-			assert.Equal(t, len(history.Time), len(history.Close), "Time and Close arrays should have same length")
-			t.Logf("Retrieved %d historical data points for GGAL", len(history.Time))
-		}
+		from := to.AddDate(0, 0, -30)
+		// History symbols need a settlement suffix; bare "GGAL" returns no_data.
+		history, err := client.GetHistory(ctx, "GGAL 24HS", ResolutionDaily, from, to)
+		require.NoError(t, err, "Failed to get history from real API")
+		require.NotEmpty(t, history.Time, "30 days of daily history should not be empty")
+		assert.Equal(t, len(history.Time), len(history.Close), "Time and Close arrays should have same length")
+		t.Logf("Retrieved %d historical data points for GGAL 24HS", len(history.Time))
 	})
 
 	t.Run("GetIntradayHistory", func(t *testing.T) {
 		to := time.Now()
-		from := to.Add(-30 * time.Minute)
-		bars, err := client.GetIntradayHistory(ctx, "GGAL", Resolution1Min, from, to)
-		if err != nil {
-			t.Logf("Intraday history skipped or failed: %v", err)
-			return
-		}
-		t.Logf("Retrieved %d 1-minute bars for GGAL", len(bars.Time))
+		from := to.AddDate(0, 0, -5)
+		// The free endpoint serves delayed intraday data, so only assert the call works.
+		bars, err := client.GetIntradayHistory(ctx, "GGAL 24HS", Resolution1Min, from, to)
+		require.NoError(t, err, "Failed to get intraday history from real API")
+		t.Logf("Retrieved %d 1-minute bars for GGAL 24HS", len(bars.Time))
 	})
 
 	t.Run("GetCurrentQuote", func(t *testing.T) {
-		quote, err := client.GetCurrentQuote(ctx, "GGAL", Settlement48HS)
+		// BYMA moved to T+1 in 2024, so 48HS no longer quotes.
+		quote, err := client.GetCurrentQuote(ctx, "GGAL", Settlement24HS)
 		if err != nil {
 			t.Logf("Current quote may be empty outside market hours: %v", err)
 			return
 		}
 		assert.Equal(t, "GGAL", quote.Symbol, "quote symbol mismatch")
-		t.Logf("GGAL 48HS quote: last $%.2f, bid $%.2f, ask $%.2f", quote.Last, quote.Bid, quote.Ask)
+		t.Logf("GGAL 24HS quote: last $%.2f, bid $%.2f, ask $%.2f", quote.Last, quote.Bid, quote.Ask)
 	})
 
 	t.Run("GetEquityProfile", func(t *testing.T) {
