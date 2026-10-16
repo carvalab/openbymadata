@@ -228,11 +228,16 @@ func (e *statusError) Error() string {
 }
 
 // isRetryable reports whether a failed request is worth retrying. Network
-// errors, timeouts, 429 and 5xx are; other 4xx responses won't change.
+// errors, timeouts, 429 and 5xx are. So is 400: BYMA returns it at random
+// under load and the same request then succeeds. Other 4xx won't change.
 func isRetryable(err error) bool {
 	var se *statusError
 	if errors.As(err, &se) {
-		return se.code == http.StatusRequestTimeout || se.code == http.StatusTooManyRequests || se.code >= 500
+		switch se.code {
+		case http.StatusBadRequest, http.StatusRequestTimeout, http.StatusTooManyRequests:
+			return true
+		}
+		return se.code >= 500
 	}
 	return true
 }

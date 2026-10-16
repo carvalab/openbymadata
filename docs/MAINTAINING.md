@@ -67,6 +67,8 @@ A red **Live API** badge means one of the two broke. Start from its log.
 - `market-time` sends `timezone: "GMT-03:00"`, not an IANA name.
 - File ids (`descarga`, `archivo`) are numbers. Download via
   `free/sba/download/{id}`; the `bolsar.com` links BYMA returns are dead.
+- BYMA returns HTTP 400 at random (seen on `total-negotiated`); the same
+  request succeeds on retry, so the client retries 400s.
 - `bnown/bolsar/balances` redirects to an OAuth login (401).
 - Futures prices come per 1000 and the client scales them.
 - The free intraday endpoint returns delayed data only, a few bars a day.

@@ -322,6 +322,7 @@ func TestRetryPolicy(t *testing.T) {
 		status    int
 		wantCalls int32
 	}{
+		{http.StatusBadRequest, 2},
 		{http.StatusNotFound, 1},
 		{http.StatusUnauthorized, 1},
 		{http.StatusServiceUnavailable, 2},
@@ -455,11 +456,11 @@ func TestSectionHeader(t *testing.T) {
 
 func TestAttemptCount(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer srv.Close()
 
 	c := New(&ClientOptions{BaseURL: srv.URL, Timeout: time.Second, RetryAttempts: 3, Logger: nopLogger{}})
 	_, err := c.GetNews(context.Background())
-	assert.EqualError(t, err, "request failed after 1 attempts: HTTP error 400")
+	assert.EqualError(t, err, "request failed after 1 attempts: HTTP error 404")
 }
