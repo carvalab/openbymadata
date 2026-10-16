@@ -649,11 +649,4 @@ Este proyecto está licenciado bajo la Licencia MIT - mirá el archivo [LICENSE]
 
 ## Registro de Cambios
 
-### v0.1.0
-- Lanzamiento inicial
-- Cobertura completa de la API de BYMA
-- Sistema de caché de 5 minutos incorporado
-- Búsquedas individuales de tickers y operaciones por lotes
-- Suite completa de tests con servidores HTTP de prueba
-- Optimizaciones de rendimiento y manejo rico de errores
-- Soporte de context con timeout y cancelación
+Las notas de cada versión están en [GitHub Releases](https://github.com/carvalab/openbymadata/releases).
