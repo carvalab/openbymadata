@@ -1,161 +1,66 @@
-# OpenBYMAData Debug Mode
+# Debugging
 
-## Overview
+## See every request
 
-The OpenBYMAData library includes comprehensive debug functionality to help developers:
-- Verify field mappings are correct
-- Detect when BYMA API field names change
-- Troubleshoot data parsing issues
-- Understand API response structures
-- Monitor for API breaking changes
+Pass a `Logger` in the options. The client logs at `Debug` level:
 
-## Configuration
-
-### Environment Variable
-
-Create a `.env` file in your project root:
-
-```env
-# Set to true to enable debug logging
-DEBUG=true
-```
-
-### Logger Implementation
-
-You need to provide a logger that implements the `Logger` interface:
+| Message | Fields |
+|---|---|
+| `Making request` | `method`, `url` |
+| `Request completed` | `status_code`, `response_size` |
+| `Retrying request` | `attempt`, `wait_time`, `url` |
 
 ```go
-type Logger interface {
-    Debug(msg string, fields ...LogField)
-    Info(msg string, fields ...LogField)
-    Warn(msg string, fields ...LogField)
-    Error(msg string, fields ...LogField)
-}
+type stdLogger struct{}
+
+func (stdLogger) Debug(msg string, f ...openbymadata.LogField) { log.Println("DEBUG", msg, f) }
+func (stdLogger) Info(msg string, f ...openbymadata.LogField)  { log.Println("INFO", msg, f) }
+func (stdLogger) Warn(msg string, f ...openbymadata.LogField)  { log.Println("WARN", msg, f) }
+func (stdLogger) Error(msg string, f ...openbymadata.LogField) { log.Println("ERROR", msg, f) }
+
+opts := openbymadata.DefaultClientOptions()
+opts.Logger = stdLogger{}
+client := openbymadata.NewClient(opts)
 ```
 
-## Debug Output
+`NoOpLogger` (the default) discards everything.
 
-When debug mode is enabled, you'll see:
+## Common surprises
 
-### 1. **HTTP Request/Response Logging**
-```
-🐛 DEBUG: Making request
-   method: POST
-   url: https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/index-price
+| Symptom | Cause |
+|---|---|
+| `GetHistory` returns no bars, no error | the symbol needs a settlement suffix: `"GGAL 24HS"` |
+| `GetCurrentQuote` says "no quote available" | `Settlement48HS` (T+1 replaced it), or the market is closed: check `IsMarketOpen` |
+| A field is always zero or empty | BYMA renamed it. Run the drift check below |
+| `HTTP error 400` after a few seconds | BYMA failed the request on every retry; it does this under load. Try again later |
+| `HTTP error 401` | BYMA moved the endpoint behind a login (e.g. `GetCompanyBalance`) |
+| Same values for 5 minutes | the cache; call `ClearCache()` or disable it |
 
-🐛 DEBUG: Request completed
-   status_code: 200
-   response_size: 4921
-```
+## Check whether BYMA changed something
 
-### 2. **Raw API Response Data**
-```
-🐛 DEBUG: Raw API Response
-   endpoint: index-price
-   raw_json: {"data":[{"symbol":"G","description":"S&P BYMA Indice General"...
-   parsed_structure: map[data:[map[description:S&P BYMA Indice General...]]]
-```
-
-### 3. **Field Names and Structure**
-```
-🐛 DEBUG: Available fields in first data item
-   endpoint: index-price
-   fields: [symbol, description, price, variation, highValue, minValue, previousClosingPrice]
-   first_item: map[description:S&P BYMA Indice General symbol:G price:9.4611e+07...]
-```
-
-## Example Usage
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    "github.com/carvalab/openbymadata"
-)
-
-type MyLogger struct{}
-
-func (l *MyLogger) Debug(msg string, fields ...openbymadata.LogField) {
-    fmt.Printf("DEBUG: %s\n", msg)
-    for _, field := range fields {
-        fmt.Printf("  %s: %v\n", field.Key, field.Value)
-    }
-}
-
-func (l *MyLogger) Info(msg string, fields ...openbymadata.LogField) {
-    fmt.Printf("INFO: %s\n", msg)
-}
-
-func (l *MyLogger) Warn(msg string, fields ...openbymadata.LogField) {
-    fmt.Printf("WARN: %s\n", msg)
-}
-
-func (l *MyLogger) Error(msg string, fields ...openbymadata.LogField) {
-    fmt.Printf("ERROR: %s\n", msg)
-}
-
-func main() {
-    // Create client with debug logger
-    client := openbymadata.NewClient(&openbymadata.ClientOptions{
-        Timeout: 15 * time.Second,
-        Logger:  &MyLogger{},
-    })
-
-    // Make API calls - debug output will show automatically if DEBUG=true
-    ctx := context.Background()
-    indices, err := client.GetIndices(ctx)
-    if err != nil {
-        fmt.Printf("Error: %v\n", err)
-    } else {
-        fmt.Printf("Got %d indices\n", len(indices))
-    }
-}
-```
-
-## API Endpoints Covered
-
-All API methods include debug logging:
-
-- **Market Data**: `IsWorkingDay`, `GetIndices`, `MarketResume`
-- **Securities**: `GetBluechips`, `GetGalpones`, `GetCedears`
-- **Fixed Income**: `GetBonds`, `GetShortTermBonds`, `GetCorporateBonds`
-- **Derivatives**: `GetOptions`, `GetFutures`
-- **News**: `GetNews`, `GetIncomeStatement`
-
-## Field Mapping Verification
-
-The debug output shows both the raw API field names and how they're mapped to Go struct fields:
-
-### Example: News API
-```
-Raw API fields: [descarga, emisor, fecha, referencia, simbolo, tipoArchivo]
-Mapped to:
-- emisor → Titulo (company name as title)
-- referencia → Descripcion (reference as description)
-- fecha → Fecha (date)
-- descarga → Descarga (download URL)
-```
-
-## Detecting API Changes
-
-If BYMA changes their API structure, debug mode will help you identify:
-- New fields that appeared
-- Fields that were renamed
-- Fields that were removed
-- Changed data types
-
-## Demo
-
-Run the debug demo to see it in action:
+From a clone of this repository:
 
 ```bash
-# Set DEBUG=true in .env first
-go run cmd/debug/main.go
+# Every public method against the live API
+INTEGRATION_TEST=true go test -tags integration -run Integration -v ./...
+
+# Fields BYMA stopped (or started) sending, compared with the recorded fixtures
+go test -tags record -run TestRecordFixtures -v ./internal/api/
+
+# Endpoints added or removed in BYMA's web app
+go run ./scripts/discover -probe
 ```
 
-## Security Note
+[docs/MAINTAINING.md](docs/MAINTAINING.md) explains how to read and fix each.
 
-⚠️ **Warning**: Debug mode logs sensitive API response data. Only enable in development/testing environments, never in production. 
+## Look at a raw response
+
+Send the same request the client does, including the `Options` header from
+`sectionHeader` in `internal/api/endpoints.go`:
+
+```bash
+curl -s -X POST https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/leading-equity \
+  -H 'Content-Type: application/json' -H 'Options: renta-variable' \
+  -H 'Origin: https://open.bymadata.com.ar' \
+  -d '{"excludeZeroPxAndQty":false,"T2":false,"T1":true,"T0":false,"Content-Type":"application/json"}' | head -c 800
+```
