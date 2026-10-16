@@ -33,3 +33,6 @@ jobs:
         env:
           INTEGRATION_TEST: "true"
         run: go test -tags integration -run Integration -count=1 -v ./...
+
+      - name: Payload drift (fields BYMA stopped sending)
+        run: go test -tags record -run TestRecordFixtures -count=1 -v ./internal/api/

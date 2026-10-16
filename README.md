@@ -3,6 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/carvalab/openbymadata.svg)](https://pkg.go.dev/github.com/carvalab/openbymadata)
 [![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
 [![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
+[![Coverage](https://codecov.io/gh/carvalab/openbymadata/branch/main/graph/badge.svg)](https://app.codecov.io/gh/carvalab/openbymadata)
 [![Go Report Card](https://goreportcard.com/badge/github.com/carvalab/openbymadata)](https://goreportcard.com/report/github.com/carvalab/openbymadata)
 [![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -642,6 +643,9 @@ Esta librería está inspirada en y proporciona funcionalidad equivalente a la l
 | Manual caching | Built-in 5-minute caching |
 
 ## Cómo Contribuir
+
+Si BYMA cambió algo y la librería dejó de andar, [docs/MAINTAINING.md](docs/MAINTAINING.md) tiene los pasos para encontrarlo y arreglarlo.
+
 
 1. Hacé un fork del repositorio
 2. Creá tu rama de funcionalidad (`git checkout -b feature/funcionalidad-asombrosa`)
