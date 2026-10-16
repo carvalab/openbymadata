@@ -26,6 +26,31 @@ const (
 	pathBalances        = "bnown/seriesHistoricas/balances"
 )
 
+// sectionHeader is the value BYMA expects in the "Options" request header
+// for each endpoint, mirroring the open.bymadata.com.ar web app. Requests
+// without it may be rejected with HTTP 400.
+var sectionHeader = map[string]string{
+	pathMarketTime:      "dashboard",
+	pathTotalNegotiated: "dashboard",
+	pathIndexPrice:      "renta-variable",
+	pathLeadingEquity:   "renta-variable",
+	pathGeneralEquity:   "renta-variable",
+	pathCedears:         "renta-variable",
+	pathHistorical:      "renta-variable",
+	pathPublicBonds:     "renta-fija",
+	pathLetters:         "renta-fija",
+	pathCorpBonds:       "renta-fija",
+	pathOptions:         "derivados",
+	pathIndexFuture:     "derivados",
+	pathNews:            "notices-and-events",
+	pathCurrentQuote:    "technical-details",
+	pathCompanyGeneral:  "technical-details",
+	pathCompanyProfile:  "technical-details",
+	pathCompanyMgmt:     "technical-details",
+	pathCompanyBalance:  "technical-details",
+	pathBalances:        "technical-details",
+}
+
 // Settlement identifies the settlement window used by BYMA quote endpoints.
 // The numeric codes are what the API expects; the textual forms are accepted
 // on input for ergonomics and serialized to the canonical numeric code.

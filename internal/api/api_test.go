@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -416,4 +417,49 @@ func TestClose(t *testing.T) {
 	c.Close()
 	c.httpClient.Transport = &http.Transport{}
 	c.Close()
+}
+
+func TestSectionHeader(t *testing.T) {
+	got := map[string]string{}
+	var mu sync.Mutex
+	fixtures := fixtureServer(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		got[strings.TrimPrefix(r.URL.Path, "/base"+freePrefix)] = r.Header.Get("Options")
+		mu.Unlock()
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/base")
+		fixtures.Config.Handler.ServeHTTP(w, r)
+	}))
+	defer srv.Close()
+
+	// A base URL with its own path must still resolve the endpoint name.
+	c := newTestClient(srv.URL + "/base")
+	ctx := context.Background()
+	_, _ = c.GetNews(ctx)
+	_, _ = c.GetMarketTime(ctx)
+	_, _ = c.GetBonds(ctx)
+	_, _ = c.GetCurrentQuote(ctx, "GGAL", Settlement24HS)
+	_, _ = c.GetHistory(ctx, "GGAL 24HS", ResolutionDaily, time.Now(), time.Now())
+
+	assert.Equal(t, map[string]string{
+		pathNews:         "notices-and-events",
+		pathMarketTime:   "dashboard",
+		pathPublicBonds:  "renta-fija",
+		pathCurrentQuote: "technical-details",
+		pathHistorical:   "renta-variable",
+	}, got)
+	for path := range sectionHeader {
+		assert.NotEmpty(t, sectionHeader[path], path)
+	}
+}
+
+func TestAttemptCount(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	c := New(&ClientOptions{BaseURL: srv.URL, Timeout: time.Second, RetryAttempts: 3, Logger: nopLogger{}})
+	_, err := c.GetNews(context.Background())
+	assert.EqualError(t, err, "request failed after 1 attempts: HTTP error 400")
 }

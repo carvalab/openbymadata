@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -94,8 +96,10 @@ func (c *Client) post(url string, data []byte) ([]byte, error) {
 // doRequest performs an HTTP request with retries and proper error handling
 func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
 	var lastErr error
+	attempts := 0
 
 	for attempt := 0; attempt <= c.retryAttempts; attempt++ {
+		attempts++
 		if attempt > 0 {
 			waitTime := time.Duration(attempt) * time.Second
 			c.logger.Debug("Retrying request",
@@ -117,7 +121,7 @@ func (c *Client) doRequest(method, url string, data []byte) ([]byte, error) {
 		return resp, nil
 	}
 
-	return nil, fmt.Errorf("request failed after %d attempts: %w", c.retryAttempts+1, lastErr)
+	return nil, fmt.Errorf("request failed after %d attempts: %w", attempts, lastErr)
 }
 
 func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
@@ -136,6 +140,9 @@ func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
 		req.Header.Set(key, value)
 	}
 	c.mu.RUnlock()
+	if section, ok := sectionHeader[strings.TrimPrefix(req.URL.Path, c.basePath())]; ok {
+		req.Header.Set("Options", section)
+	}
 
 	c.logger.Debug("Making request",
 		LogField{Key: "method", Value: method},
@@ -163,9 +170,21 @@ func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
 	return responseBody, nil
 }
 
+// apiPrefix is the path shared by every free BYMA Open Data endpoint.
+const apiPrefix = "/vanoms-be-core/rest/api/bymadata/free/"
+
 // buildURL constructs a full URL from the base URL and endpoint
 func (c *Client) buildURL(endpoint string) string {
-	return c.baseURL + "/vanoms-be-core/rest/api/bymadata/free/" + endpoint
+	return c.baseURL + apiPrefix + endpoint
+}
+
+// basePath is the URL path that precedes the endpoint name, including any
+// path component of the configured base URL.
+func (c *Client) basePath() string {
+	if u, err := url.Parse(c.baseURL); err == nil {
+		return strings.TrimSuffix(u.Path, "/") + apiPrefix
+	}
+	return apiPrefix
 }
 
 // parseAPIResponse parses a standard API response
