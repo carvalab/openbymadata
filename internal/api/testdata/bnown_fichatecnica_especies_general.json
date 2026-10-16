@@ -1,0 +1,24 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 50,
+  "total_elements_count": 1
+ },
+ "data": [
+  {
+   "codigoIsin": "ARALUA010258",
+   "tipoEspecie": "Acciones",
+   "descripcion": "Pesos",
+   "valorNominal": 1,
+   "montoAutorizado": 2800000000,
+   "denominacion": "Ordinarias Escriturales (1 Voto)",
+   "lider": "Si",
+   "insType": "EQUITY",
+   "capitalizacion": "",
+   "emisor": "ALUAR ALUMINIO ARGENTINO S.A."
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

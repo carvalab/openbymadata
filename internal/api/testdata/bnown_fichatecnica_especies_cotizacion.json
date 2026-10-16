@@ -1,0 +1,43 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 1,
+  "total_elements_count": 1
+ },
+ "data": [
+  {
+   "tradeVolume": 921069,
+   "symbol": "GGAL",
+   "imbalance": -0.0118,
+   "previousSettlementPrice": 5900,
+   "offerPrice": 5840,
+   "openInterest": 0,
+   "vwap": 5866.0345588,
+   "description": "",
+   "numberOfOrders": 2966,
+   "openingPrice": 5910,
+   "tickDirection": -1,
+   "securityDesc": "",
+   "securitySubType": "M",
+   "previousClosingPrice": 5900,
+   "settlementType": "2",
+   "quantityOffer": 18941,
+   "tradingHighPrice": 5945,
+   "denominationCcy": "ARS",
+   "bidPrice": 5830,
+   "tradingLowPrice": 5815,
+   "market": "BYMA",
+   "volumeAmount": 5403022585,
+   "volume": 921069,
+   "trade": 5830,
+   "tradeHour": "13:45:51",
+   "securityType": "CS",
+   "closingPrice": 0,
+   "settlementPrice": 5830,
+   "quantityBid": 4656
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

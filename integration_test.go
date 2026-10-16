@@ -56,6 +56,9 @@ func TestIntegrationRealAPI(t *testing.T) {
 		require.NoError(t, err, "Failed to get market time from real API")
 		assert.NotEmpty(t, mt.OpeningText, "market opening time missing")
 		assert.NotEmpty(t, mt.ClosingText, "market closing time missing")
+		_, offset := mt.Opens.Zone()
+		assert.Equal(t, -3*60*60, offset, "market opens should be in Buenos Aires time")
+		assert.Equal(t, time.Now().In(mt.Opens.Location()).YearDay(), mt.Opens.YearDay(), "market opens should be dated today")
 		t.Logf("Market working day: %v, opens %s, closes %s (%s)", mt.IsWorkingDay, mt.OpeningText, mt.ClosingText, mt.Timezone)
 	})
 
@@ -124,7 +127,32 @@ func TestIntegrationRealAPI(t *testing.T) {
 	t.Run("GetCompanyManagement", func(t *testing.T) {
 		directors, err := client.GetCompanyManagement(ctx, "ALUA")
 		require.NoError(t, err, "Failed to get company management from real API")
+		require.NotEmpty(t, directors)
+		assert.NotEmpty(t, directors[0].Name, "director name should be parsed")
+		assert.NotEmpty(t, directors[0].Position, "director position should be parsed")
 		t.Logf("ALUA directors: %d", len(directors))
+	})
+
+	t.Run("MarketResume", func(t *testing.T) {
+		summary, err := client.MarketResume(ctx)
+		require.NoError(t, err, "Failed to get market summary from real API")
+		require.NotEmpty(t, summary)
+		assert.Positive(t, summary[0].TotalNegotiated, "total negotiated should be parsed")
+	})
+
+	t.Run("GetNews", func(t *testing.T) {
+		news, err := client.GetNews(ctx)
+		require.NoError(t, err, "Failed to get news from real API")
+		require.NotEmpty(t, news)
+		assert.Regexp(t, `/sba/download/\d+$`, news[0].Descarga, "news download link should carry the file id")
+	})
+
+	t.Run("GetIncomeStatement", func(t *testing.T) {
+		statements, err := client.GetIncomeStatement(ctx, "ALUA")
+		require.NoError(t, err, "Failed to get income statements from real API")
+		require.NotEmpty(t, statements)
+		assert.Regexp(t, `^\d{4}-\d{2}-\d{2}$`, statements[0].FechaCierre)
+		assert.Regexp(t, `/sba/download/\d+$`, statements[0].BalancesArchivo)
 	})
 
 	t.Run("DeprecatedAliases", func(t *testing.T) {

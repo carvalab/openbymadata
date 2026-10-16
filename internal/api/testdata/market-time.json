@@ -1,0 +1,6 @@
+{
+ "isWorkingDay": true,
+ "marketClosingTime": "17:00:00",
+ "timezone": "GMT-03:00",
+ "marketOpeningTime": "10:30:00"
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/carvalab/openbymadata/internal/utils"
@@ -33,13 +34,10 @@ func (c *Client) GetMarketTime(ctx context.Context) (MarketTime, error) {
 		OpeningText:  raw.MarketOpeningTime,
 		ClosingText:  raw.MarketClosingTime,
 	}
-	if loc, err := time.LoadLocation(raw.Timezone); err == nil {
-		mt.Opens = parseClockTime(raw.MarketOpeningTime, loc)
-		mt.Closes = parseClockTime(raw.MarketClosingTime, loc)
-	} else {
-		mt.Opens = parseClockTime(raw.MarketOpeningTime, time.UTC)
-		mt.Closes = parseClockTime(raw.MarketClosingTime, time.UTC)
-	}
+	loc := resolveLocation(raw.Timezone)
+	today := time.Now().In(loc)
+	mt.Opens = parseClockTime(raw.MarketOpeningTime, today)
+	mt.Closes = parseClockTime(raw.MarketClosingTime, today)
 	return mt, nil
 }
 
@@ -102,7 +100,7 @@ func (c *Client) MarketResume(ctx context.Context) ([]MarketSummary, error) {
 			Symbol:          utils.GetString(raw, "symbol"),
 			AssetType:       utils.GetString(raw, "assetType"),
 			ParentKey:       utils.GetString(raw, "parentKey"),
-			TotalNegotiated: utils.GetFloat64(raw, "totalNegotiated"),
+			TotalNegotiated: totalNegotiated(raw),
 			Volume:          utils.GetInt64(raw, "volume"),
 			Operations:      utils.GetInt64(raw, "operations"),
 		})
@@ -111,15 +109,57 @@ func (c *Client) MarketResume(ctx context.Context) ([]MarketSummary, error) {
 	return summaries, nil
 }
 
+// totalNegotiated reads the traded amount, which BYMA now sends as
+// volumeAmount instead of totalNegotiated.
+func totalNegotiated(raw map[string]interface{}) float64 {
+	if v := utils.GetFloat64(raw, "totalNegotiated"); v != 0 {
+		return v
+	}
+	return utils.GetFloat64(raw, "volumeAmount")
+}
+
+// buenosAires is used when the API timezone can't be resolved. BYMA has
+// traded at UTC-3 without DST since 2009.
+var buenosAires = time.FixedZone("ART", -3*60*60)
+
+// resolveLocation maps BYMA's timezone field to a *time.Location. The API
+// sends offsets such as "GMT-03:00", which time.LoadLocation rejects, so
+// those are turned into a fixed zone. IANA names are also accepted.
+func resolveLocation(tz string) *time.Location {
+	tz = strings.TrimSpace(tz)
+	if tz == "" {
+		return buenosAires
+	}
+	offset := strings.TrimPrefix(strings.TrimPrefix(tz, "GMT"), "UTC")
+	if offset != tz || strings.HasPrefix(offset, "+") || strings.HasPrefix(offset, "-") {
+		if offset == "" {
+			return time.UTC
+		}
+		if t, err := time.Parse("-07:00", offset); err == nil {
+			_, secs := t.Zone()
+			return time.FixedZone(tz, secs)
+		}
+		if t, err := time.Parse("-0700", offset); err == nil {
+			_, secs := t.Zone()
+			return time.FixedZone(tz, secs)
+		}
+		return buenosAires
+	}
+	if loc, err := time.LoadLocation(tz); err == nil {
+		return loc
+	}
+	return buenosAires
+}
+
 // parseClockTime parses BYMA's opening/closing time strings (e.g. "11:00:00")
-// as a wall-clock instant on the given date inside loc.
-func parseClockTime(value string, loc *time.Location) time.Time {
+// as a wall-clock instant on day's date, in day's location.
+func parseClockTime(value string, day time.Time) time.Time {
 	if value == "" {
 		return time.Time{}
 	}
 	for _, layout := range []string{"15:04:05", "15:04"} {
-		if t, err := time.ParseInLocation(layout, value, loc); err == nil {
-			return t
+		if t, err := time.Parse(layout, value); err == nil {
+			return time.Date(day.Year(), day.Month(), day.Day(), t.Hour(), t.Minute(), t.Second(), 0, day.Location())
 		}
 	}
 	return time.Time{}

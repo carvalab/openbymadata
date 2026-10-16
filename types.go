@@ -148,7 +148,7 @@ type ClientOptions struct {
 	Timeout       time.Duration
 	RetryAttempts int
 	Logger        Logger
-	EnableCache   bool // Enable 5-minute caching (default: true)
+	EnableCache   bool // Enable 5-minute caching. On with NewClient() or DefaultClientOptions(); set it explicitly when passing your own options.
 }
 
 // DefaultClientOptions returns default client options

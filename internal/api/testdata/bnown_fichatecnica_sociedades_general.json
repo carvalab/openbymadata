@@ -1,0 +1,28 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 100,
+  "total_elements_count": 100
+ },
+ "data": [
+  {
+   "piso": "3°",
+   "website": "www.aluar.com.ar",
+   "calle": "Marcelo Torcuato de Alvear 590",
+   "dpto": "",
+   "cierreEjercicio": "30/06",
+   "actividad": "Explotación de una Planta de Aluminio Primario.",
+   "pais": "Argentina",
+   "logo": 13919,
+   "fechaConstitucion": "26 de Junio de 1970",
+   "localidad": "Capital Federal",
+   "provinciaEstado": "Capital Federal",
+   "telefono": "(011) 4313-7593 / 4311-9026",
+   "codPostal": "C1058AAF",
+   "email": "asjurid@infovia.com.ar"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

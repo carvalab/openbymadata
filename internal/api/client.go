@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -147,7 +148,7 @@ func (c *Client) makeRequest(method, url string, data []byte) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("HTTP error %d", resp.StatusCode)
+		return nil, &statusError{code: resp.StatusCode}
 	}
 
 	responseBody, err := io.ReadAll(resp.Body)
@@ -198,7 +199,21 @@ func (c *Client) parseAPIResponse(data []byte, target interface{}) error {
 	return nil
 }
 
-// isRetryable determines if an error is retryable
+// statusError reports a non-2xx HTTP response.
+type statusError struct {
+	code int
+}
+
+func (e *statusError) Error() string {
+	return fmt.Sprintf("HTTP error %d", e.code)
+}
+
+// isRetryable reports whether a failed request is worth retrying. Network
+// errors, timeouts, 429 and 5xx are; other 4xx responses won't change.
 func isRetryable(err error) bool {
+	var se *statusError
+	if errors.As(err, &se) {
+		return se.code == http.StatusRequestTimeout || se.code == http.StatusTooManyRequests || se.code >= 500
+	}
 	return true
 }

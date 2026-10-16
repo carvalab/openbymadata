@@ -30,8 +30,8 @@
 //
 // Historical Data: Access OHLCV charting data with GetHistory() and GetIntradayHistory().
 //
-// Smart Caching: All collection data is automatically cached for 5 minutes, reducing API
-// calls by 95% and improving performance by 100x for cached requests.
+// Smart Caching: All collection data is automatically cached for 5 minutes, so repeated
+// calls are answered from memory instead of the network.
 //
 // # Configuration
 //
@@ -79,6 +79,7 @@ func NewClient(opts ...*ClientOptions) Client {
 		if opts[0].Logger != nil {
 			options.Logger = opts[0].Logger
 		}
+		options.EnableCache = opts[0].EnableCache
 	}
 
 	internalOpts := &api.ClientOptions{
@@ -434,6 +435,8 @@ func (c *client) GetCompanyManagement(ctx context.Context, symbol string) ([]Com
 }
 
 // GetCompanyBalance returns the latest balance sheet rows for a symbol.
+// BYMA now puts this endpoint behind a login, so it fails on the free API;
+// use GetIncomeStatement for the filed statement PDFs instead.
 func (c *client) GetCompanyBalance(ctx context.Context, symbol string) ([]CompanyBalance, error) {
 	return c.Client.GetCompanyBalance(ctx, symbol)
 }
