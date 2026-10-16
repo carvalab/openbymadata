@@ -155,6 +155,85 @@ func TestIntegrationRealAPI(t *testing.T) {
 		assert.Regexp(t, `/sba/download/\d+$`, statements[0].BalancesArchivo)
 	})
 
+	t.Run("GetETFs", func(t *testing.T) {
+		etfs, err := client.GetETFs(ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, etfs)
+		assert.NotEmpty(t, etfs[0].Symbol)
+		assert.NotEmpty(t, etfs[0].Currency)
+	})
+
+	t.Run("GetMEPIndices", func(t *testing.T) {
+		mep, err := client.GetMEPIndices(ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, mep)
+		assert.Positive(t, mep[0].Last, "MEP rate should be parsed")
+		t.Logf("%s: %.2f", mep[0].Symbol, mep[0].Last)
+	})
+
+	t.Run("GetTopMovers", func(t *testing.T) {
+		movers, err := client.GetTopMovers(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, movers.Stocks)
+		assert.NotEmpty(t, movers.Bonds)
+	})
+
+	t.Run("GetIndexHistory", func(t *testing.T) {
+		to := time.Now()
+		h, err := client.GetIndexHistory(ctx, "M", ResolutionDaily, to.AddDate(0, 0, -30), to)
+		require.NoError(t, err)
+		require.NotEmpty(t, h.Time, "30 days of Merval history should not be empty")
+		assert.Positive(t, h.Close[len(h.Close)-1])
+	})
+
+	t.Run("BondLists", func(t *testing.T) {
+		for name, get := range map[string]func(context.Context) ([]Bond, error){
+			"green":          client.GetGreenBonds,
+			"social":         client.GetSocialBonds,
+			"sustainability": client.GetSustainabilityBonds,
+			"linked":         client.GetLinkedBonds,
+			"senebi":         client.GetSenebiBonds,
+			"senebi letters": client.GetSenebiLetters,
+			"senebi corp":    client.GetSenebiCorporateBonds,
+		} {
+			bonds, err := get(ctx)
+			require.NoError(t, err, name)
+			t.Logf("%s: %d", name, len(bonds))
+		}
+		senebi, err := client.GetSenebiBonds(ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, senebi)
+		assert.Equal(t, "SENEBI", senebi[0].Market)
+	})
+
+	t.Run("GetBondIndices", func(t *testing.T) {
+		idx, err := client.GetBondIndices(ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, idx)
+		assert.Positive(t, idx[0].Value)
+	})
+
+	t.Run("GetBondCoupons", func(t *testing.T) {
+		coupons, err := client.GetBondCoupons(ctx, "GD30")
+		require.NoError(t, err)
+		require.NotEmpty(t, coupons)
+		assert.False(t, coupons[0].InterestPaymentDate.IsZero(), "payment date should be parsed")
+	})
+
+	t.Run("GetMarketResponsibles", func(t *testing.T) {
+		resp, err := client.GetMarketResponsibles(ctx, "ALUA")
+		require.NoError(t, err)
+		require.NotEmpty(t, resp)
+		assert.NotEmpty(t, resp[0].Name)
+	})
+
+	t.Run("SearchInstruments", func(t *testing.T) {
+		found, err := client.SearchInstruments(ctx, "GGAL")
+		require.NoError(t, err)
+		require.NotEmpty(t, found)
+		assert.Equal(t, "GGAL", found[0].Symbol)
+	})
+
 	t.Run("DeprecatedAliases", func(t *testing.T) {
 		bluechips, err := client.GetLeadingEquity(ctx)
 		require.NoError(t, err)

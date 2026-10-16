@@ -265,3 +265,46 @@ func TestNoOpLoggerAndErrors(t *testing.T) {
 	assert.ErrorIs(t, err, cause)
 	assert.False(t, IsRetryable(nil))
 }
+
+func TestClientNewEndpoints(t *testing.T) {
+	c, counts := newFixtureClient(t, true)
+	ctx := context.Background()
+
+	lists := map[string]func() (int, error){
+		"etf":                             func() (int, error) { v, err := c.GetETFs(ctx); return len(v), err },
+		"green-bond":                      func() (int, error) { v, err := c.GetGreenBonds(ctx); return len(v), err },
+		"social-bond":                     func() (int, error) { v, err := c.GetSocialBonds(ctx); return len(v), err },
+		"sustainability-bond":             func() (int, error) { v, err := c.GetSustainabilityBonds(ctx); return len(v), err },
+		"linked-bond":                     func() (int, error) { v, err := c.GetLinkedBonds(ctx); return len(v), err },
+		"senebi-bonds":                    func() (int, error) { v, err := c.GetSenebiBonds(ctx); return len(v), err },
+		"senebi-letras":                   func() (int, error) { v, err := c.GetSenebiLetters(ctx); return len(v), err },
+		"senebi-obligaciones-negociables": func() (int, error) { v, err := c.GetSenebiCorporateBonds(ctx); return len(v), err },
+		"index-bonds":                     func() (int, error) { v, err := c.GetBondIndices(ctx); return len(v), err },
+		"getBymaIndexsMep":                func() (int, error) { v, err := c.GetMEPIndices(ctx); return len(v), err },
+		"main-ups-downs":                  func() (int, error) { v, err := c.GetTopMovers(ctx); return len(v.Stocks), err },
+	}
+	for endpoint, get := range lists {
+		t.Run(endpoint, func(t *testing.T) {
+			for range 2 {
+				_, err := get()
+				require.NoError(t, err)
+			}
+			assert.Equal(t, int32(1), counts[endpoint].Load(), "second call served from cache")
+		})
+	}
+
+	coupons, err := c.GetBondCoupons(ctx, "GD30")
+	require.NoError(t, err)
+	assert.NotEmpty(t, coupons)
+	h, err := c.GetIndexHistory(ctx, "M", ResolutionDaily, time.Now().AddDate(0, 0, -30), time.Now())
+	require.NoError(t, err)
+	assert.Len(t, h.Time, 5)
+	resp, err := c.GetMarketResponsibles(ctx, "ALUA")
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp)
+	found, err := c.SearchInstruments(ctx, "GGAL")
+	require.NoError(t, err)
+	assert.Equal(t, "GGAL", found[0].Symbol)
+
+	assert.Equal(t, 3, c.GetCacheInfo()["bond_indices"].(map[string]any)["count"])
+}

@@ -4,7 +4,7 @@
 [![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
 [![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
 [![Coverage](https://codecov.io/gh/carvalab/openbymadata/branch/main/graph/badge.svg)](https://app.codecov.io/gh/carvalab/openbymadata)
-[![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
+[![Release](https://badgen.net/github/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > 🇦🇷 **Español:** [Leer el README en español →](README.md)
@@ -26,11 +26,11 @@ Provides strongly-typed, concurrent-safe access to Argentine financial market da
 - **Comprehensive Error Handling**: Custom error types with retry logic
 
 ### 📊 **Market Data Coverage**
-- **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs  
-- **Fixed Income**: Government bonds, corporate bonds, short-term bills (Letras)
+- **Equities**: Leading equity (blue chips), general equity (galpones), CEDEARs, ETFs
+- **Fixed Income**: Government and corporate bonds, Letras, green/social/sustainability bonds, SENEBI segment, bond indices, coupon schedules
 - **Derivatives**: Options contracts, futures
 - **Historical Data**: Time series with OHLCV (Open, High, Low, Close, Volume) for charting
-- **Market Data**: Indices, market summary, working day status
+- **Market Data**: Indices and their history (Merval), MEP dollar, top movers, symbol search, market summary, working day status
 - **News & Financials**: Market news, income statements
 
 > **Note**: "Securities" is a generic financial term in our Go code, but the actual BYMA API endpoints are: `leading-equity`, `general-equity`, and `cedears`
@@ -386,6 +386,19 @@ indices, err := client.GetIndices(ctx)
 
 // Get market summary/resume
 summary, err := client.MarketResume(ctx)
+
+// MEP dollar (implied ARS/USD rate)
+mep, err := client.GetMEPIndices(ctx)
+fmt.Printf("%s %.2f\n", mep[0].Symbol, mep[0].Last)
+
+// Merval daily history ("M"; see GetIndices for other symbols)
+merval, err := client.GetIndexHistory(ctx, "M", openbymadata.ResolutionDaily, from, to)
+
+// Top movers: stocks, government bonds and options
+movers, err := client.GetTopMovers(ctx)
+
+// Search any instrument by symbol or name (up to 10 matches)
+matches, err := client.SearchInstruments(ctx, "galicia")
 ```
 
 ### Collection-Based Access (API Endpoints)
@@ -395,6 +408,7 @@ summary, err := client.MarketResume(ctx)
 bluechips, err := client.GetBluechips(ctx)  // → 'leading-equity' endpoint
 galpones, err := client.GetGalpones(ctx)    // → 'general-equity' endpoint  
 cedears, err := client.GetCedears(ctx)      // → 'cedears' endpoint
+etfs, err := client.GetETFs(ctx)            // → 'etf' endpoint
 ```
 
 ### Fixed Income
@@ -408,6 +422,24 @@ shortTermBonds, err := client.GetShortTermBonds(ctx)
 
 // Corporate bonds
 corporateBonds, err := client.GetCorporateBonds(ctx)
+
+// Labelled bonds
+green, err := client.GetGreenBonds(ctx)
+social, err := client.GetSocialBonds(ctx)
+sustainable, err := client.GetSustainabilityBonds(ctx)
+linked, err := client.GetLinkedBonds(ctx)
+
+// SENEBI: bilateral segment without central counterparty (symbols end in ".SB")
+senebi, err := client.GetSenebiBonds(ctx)
+senebiLetters, err := client.GetSenebiLetters(ctx)
+senebiCorp, err := client.GetSenebiCorporateBonds(ctx)
+
+// Fixed-income indices and a bond's payment schedule
+bondIndices, err := client.GetBondIndices(ctx)
+coupons, err := client.GetBondCoupons(ctx, "GD30")
+
+// Bonds now carry Currency, Market and DaysToMaturity
+fmt.Println(bonds[0].Currency, bonds[0].Market, bonds[0].DaysToMaturity)
 ```
 
 ### Derivatives

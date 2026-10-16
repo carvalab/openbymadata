@@ -1,0 +1,57 @@
+{
+ "content": {
+  "page_count": 1,
+  "page_number": 1,
+  "page_size": 50,
+  "total_elements_count": 3
+ },
+ "data": [
+  {
+   "country": "Argentina",
+   "date": "2026-10-15",
+   "description": "IDXDOLARB",
+   "highValue": 1539.8800048828125,
+   "highestPrice": 1538.18994140625,
+   "isRate": false,
+   "lowestPrice": 1535.22998046875,
+   "minValue": 1532.4599609375,
+   "openingPrice": 1537.4200439453125,
+   "previousClosingPrice": 1532.4599609375,
+   "price": 1536.969970703125,
+   "symbol": "IDXDOLARB",
+   "time": "15:14:00"
+  },
+  {
+   "country": "Argentina",
+   "date": "2026-10-15",
+   "description": "IDXEXTB",
+   "highValue": 1622.4599609375,
+   "highestPrice": 1623.1600341796875,
+   "isRate": false,
+   "lowestPrice": 1617.780029296875,
+   "minValue": 1614.7900390625,
+   "openingPrice": 1619.469970703125,
+   "previousClosingPrice": 1614.7900390625,
+   "price": 1623.0400390625,
+   "symbol": "IDXEXTB",
+   "time": "15:14:00"
+  },
+  {
+   "country": "Argentina",
+   "date": "2026-10-15",
+   "description": "IDXCAUTIONB",
+   "highValue": 23.90999984741211,
+   "highestPrice": 22.809999465942383,
+   "isRate": false,
+   "lowestPrice": 21.510000228881836,
+   "minValue": 21.709999084472656,
+   "openingPrice": 22.579999923706055,
+   "previousClosingPrice": 21.709999084472656,
+   "price": 21.510000228881836,
+   "symbol": "IDXCAUTIONB",
+   "time": "15:14:00"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

@@ -187,6 +187,83 @@ func (c *client) GetFutures(ctx context.Context) ([]Future, error) {
 	})
 }
 
+// GetETFs retrieves the ETFs listed on BYMA.
+func (c *client) GetETFs(ctx context.Context) ([]Security, error) {
+	return cached(ctx, c, "etfs", func(ctx context.Context) ([]Security, error) {
+		return c.Client.GetETFs(ctx)
+	})
+}
+
+// GetGreenBonds retrieves bonds labelled green.
+func (c *client) GetGreenBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "green_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetGreenBonds(ctx)
+	})
+}
+
+// GetSocialBonds retrieves bonds labelled social.
+func (c *client) GetSocialBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "social_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSocialBonds(ctx)
+	})
+}
+
+// GetSustainabilityBonds retrieves bonds labelled sustainable.
+func (c *client) GetSustainabilityBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "sustainability_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSustainabilityBonds(ctx)
+	})
+}
+
+// GetLinkedBonds retrieves sustainability-linked bonds.
+func (c *client) GetLinkedBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "linked_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetLinkedBonds(ctx)
+	})
+}
+
+// GetSenebiBonds retrieves government bonds traded in SENEBI (symbols end in ".SB").
+func (c *client) GetSenebiBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "senebi_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSenebiBonds(ctx)
+	})
+}
+
+// GetSenebiLetters retrieves Letras traded in SENEBI.
+func (c *client) GetSenebiLetters(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "senebi_letters", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSenebiLetters(ctx)
+	})
+}
+
+// GetSenebiCorporateBonds retrieves corporate bonds traded in SENEBI.
+func (c *client) GetSenebiCorporateBonds(ctx context.Context) ([]Bond, error) {
+	return cached(ctx, c, "senebi_corporate_bonds", func(ctx context.Context) ([]Bond, error) {
+		return c.Client.GetSenebiCorporateBonds(ctx)
+	})
+}
+
+// GetBondIndices retrieves BYMA's fixed-income indices.
+func (c *client) GetBondIndices(ctx context.Context) ([]BondIndex, error) {
+	return cached(ctx, c, "bond_indices", func(ctx context.Context) ([]BondIndex, error) {
+		return c.Client.GetBondIndices(ctx)
+	})
+}
+
+// GetMEPIndices retrieves BYMA's MEP dollar indices.
+func (c *client) GetMEPIndices(ctx context.Context) ([]Index, error) {
+	return cached(ctx, c, "mep_indices", func(ctx context.Context) ([]Index, error) {
+		return c.Client.GetMEPIndices(ctx)
+	})
+}
+
+// GetTopMovers retrieves BYMA's "main ups and downs" panel.
+func (c *client) GetTopMovers(ctx context.Context) (*TopMovers, error) {
+	return cached(ctx, c, "top_movers", func(ctx context.Context) (*TopMovers, error) {
+		return c.Client.GetTopMovers(ctx)
+	})
+}
+
 // GetIndices retrieves market indices.
 func (c *client) GetIndices(ctx context.Context) ([]Index, error) {
 	return cached(ctx, c, "indices", func(ctx context.Context) ([]Index, error) {

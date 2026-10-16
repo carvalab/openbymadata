@@ -88,6 +88,8 @@ func (c *Cache) GetInfo() map[string]any {
 			count = len(v)
 		case []api.IncomeStatement:
 			count = len(v)
+		case []api.BondIndex:
+			count = len(v)
 		}
 		info[key] = map[string]any{
 			"count":     count,

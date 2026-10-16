@@ -22,29 +22,34 @@ type Security struct {
 	Operations    int64     `json:"operations"`
 	DateTime      time.Time `json:"datetime"`
 	Group         string    `json:"group"`
+	Currency      string    `json:"currency"` // denomination currency as sent by BYMA, e.g. "ARS" or "EXT"
+	Market        string    `json:"market"`   // "BYMA", or "SENEBI" for the non-guaranteed segment
 }
 
 // Bond represents a fixed income security
 type Bond struct {
-	Symbol        string    `json:"symbol"`
-	Settlement    string    `json:"settlement"`
-	BidSize       int64     `json:"bid_size"`
-	Bid           float64   `json:"bid"`
-	Ask           float64   `json:"ask"`
-	AskSize       int64     `json:"ask_size"`
-	Last          float64   `json:"last"`
-	Close         float64   `json:"close"`
-	Change        float64   `json:"change"`
-	Open          float64   `json:"open"`
-	High          float64   `json:"high"`
-	Low           float64   `json:"low"`
-	PreviousClose float64   `json:"previous_close"`
-	Turnover      float64   `json:"turnover"`
-	Volume        int64     `json:"volume"`
-	Operations    int64     `json:"operations"`
-	DateTime      time.Time `json:"datetime"`
-	Group         string    `json:"group"`
-	Expiration    time.Time `json:"expiration"`
+	Symbol         string    `json:"symbol"`
+	Settlement     string    `json:"settlement"`
+	BidSize        int64     `json:"bid_size"`
+	Bid            float64   `json:"bid"`
+	Ask            float64   `json:"ask"`
+	AskSize        int64     `json:"ask_size"`
+	Last           float64   `json:"last"`
+	Close          float64   `json:"close"`
+	Change         float64   `json:"change"`
+	Open           float64   `json:"open"`
+	High           float64   `json:"high"`
+	Low            float64   `json:"low"`
+	PreviousClose  float64   `json:"previous_close"`
+	Turnover       float64   `json:"turnover"`
+	Volume         int64     `json:"volume"`
+	Operations     int64     `json:"operations"`
+	DateTime       time.Time `json:"datetime"`
+	Group          string    `json:"group"`
+	Expiration     time.Time `json:"expiration"`
+	DaysToMaturity int64     `json:"days_to_maturity"`
+	Currency       string    `json:"currency"` // denomination currency as sent by BYMA, e.g. "ARS" or "EXT"
+	Market         string    `json:"market"`   // "BYMA", or "SENEBI" for the non-guaranteed segment
 }
 
 // Option represents an options contract
@@ -67,6 +72,7 @@ type Option struct {
 	DateTime        time.Time `json:"datetime"`
 	UnderlyingAsset string    `json:"underlying_asset"`
 	Expiration      time.Time `json:"expiration"`
+	OptionType      string    `json:"option_type"` // "CALL" or "PUT"
 }
 
 // Future represents a futures contract
@@ -209,4 +215,54 @@ type HistoryResponse struct {
 	High   []float64 `json:"h"` // Array of high prices
 	Low    []float64 `json:"l"` // Array of low prices
 	Volume []int64   `json:"v"` // Array of volumes
+}
+
+// BondIndex is a BYMA fixed-income index, such as short-term dollar bonds.
+type BondIndex struct {
+	Symbol      string    `json:"symbol"`
+	Description string    `json:"description"`
+	Currency    string    `json:"currency"`
+	Value       float64   `json:"value"`
+	Varianza    float64   `json:"varianza"` // as sent by BYMA, unscaled
+	Date        time.Time `json:"date"`
+}
+
+// BondCoupon is one interest and/or amortization payment of a bond.
+// Percentages are as published by BYMA (64 means 64%).
+type BondCoupon struct {
+	Symbol                    string    `json:"symbol"`
+	NoticeDate                time.Time `json:"notice_date"`
+	InterestPaymentDate       time.Time `json:"interest_payment_date"`
+	AmortizationPaymentDate   time.Time `json:"amortization_payment_date"`
+	InterestServiceNumber     int64     `json:"interest_service_number"`
+	AmortizationServiceNumber int64     `json:"amortization_service_number"`
+	AmortizationPercent       float64   `json:"amortization_percent"`
+	ResidualValuePercent      float64   `json:"residual_value_percent"`
+	NoticeURL                 string    `json:"notice_url"`
+}
+
+// TopMovers lists stocks, government bonds and options ordered by BYMA's
+// "main ups and downs" panel.
+type TopMovers struct {
+	Stocks  []Security `json:"stocks"`
+	Bonds   []Bond     `json:"bonds"`
+	Options []Option   `json:"options"`
+}
+
+// MarketResponsible is a company's designated market representative.
+type MarketResponsible struct {
+	Name            string    `json:"name"`
+	Position        string    `json:"position"`
+	CompanyPosition string    `json:"company_position"`
+	Since           time.Time `json:"since"`
+}
+
+// InstrumentMatch is a symbol search result.
+type InstrumentMatch struct {
+	Symbol       string `json:"symbol"`
+	Description  string `json:"description"`
+	Type         string `json:"type"`       // e.g. "Accion", "Bono", "Cedear"
+	Market       string `json:"market"`     // e.g. "BYMA"
+	Settlement   string `json:"settlement"` // e.g. "24hs"
+	Presentation string `json:"presentation"`
 }

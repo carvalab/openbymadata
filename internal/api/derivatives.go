@@ -2,8 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/carvalab/openbymadata/internal/utils"
 )
@@ -16,32 +14,13 @@ func (c *Client) GetOptions(ctx context.Context) ([]Option, error) {
 	}
 
 	var rawOptions []map[string]interface{}
-	if err := json.Unmarshal(respData, &rawOptions); err != nil {
-		return nil, fmt.Errorf("invalid response: %w", err)
+	if err := c.parseAPIResponse(respData, &rawOptions); err != nil {
+		return nil, err
 	}
 
 	options := make([]Option, 0, len(rawOptions))
 	for _, raw := range rawOptions {
-		options = append(options, Option{
-			Symbol:          utils.GetString(raw, "symbol"),
-			BidSize:         utils.GetInt64(raw, "quantityBid"),
-			Bid:             utils.GetFloat64(raw, "bidPrice"),
-			Ask:             utils.GetFloat64(raw, "offerPrice"),
-			AskSize:         utils.GetInt64(raw, "quantityOffer"),
-			Last:            utils.GetFloat64(raw, "settlementPrice"),
-			Close:           utils.GetFloat64(raw, "closingPrice"),
-			Change:          utils.GetFloat64(raw, "imbalance"),
-			Open:            utils.GetFloat64(raw, "openingPrice"),
-			High:            utils.GetFloat64(raw, "tradingHighPrice"),
-			Low:             utils.GetFloat64(raw, "tradingLowPrice"),
-			PreviousClose:   utils.GetFloat64(raw, "previousClosingPrice"),
-			Turnover:        utils.GetFloat64(raw, "volumeAmount"),
-			Volume:          utils.GetInt64(raw, "volume"),
-			Operations:      utils.GetInt64(raw, "numberOfOrders"),
-			DateTime:        utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
-			UnderlyingAsset: utils.GetString(raw, "underlyingSymbol"),
-			Expiration:      utils.GetTime(raw, "maturityDate"),
-		})
+		options = append(options, parseOption(raw))
 	}
 
 	return options, nil
@@ -84,4 +63,28 @@ func (c *Client) GetFutures(ctx context.Context) ([]Future, error) {
 	}
 
 	return futures, nil
+}
+
+func parseOption(raw map[string]interface{}) Option {
+	return Option{
+		Symbol:          utils.GetString(raw, "symbol"),
+		BidSize:         utils.GetInt64(raw, "quantityBid"),
+		Bid:             utils.GetFloat64(raw, "bidPrice"),
+		Ask:             utils.GetFloat64(raw, "offerPrice"),
+		AskSize:         utils.GetInt64(raw, "quantityOffer"),
+		Last:            utils.GetFloat64(raw, "settlementPrice"),
+		Close:           utils.GetFloat64(raw, "closingPrice"),
+		Change:          utils.GetFloat64(raw, "imbalance"),
+		Open:            utils.GetFloat64(raw, "openingPrice"),
+		High:            utils.GetFloat64(raw, "tradingHighPrice"),
+		Low:             utils.GetFloat64(raw, "tradingLowPrice"),
+		PreviousClose:   utils.GetFloat64(raw, "previousClosingPrice"),
+		Turnover:        utils.GetFloat64(raw, "volumeAmount"),
+		Volume:          utils.GetInt64(raw, "volume"),
+		Operations:      utils.GetInt64(raw, "numberOfOrders"),
+		DateTime:        utils.ParseTradeTime(utils.GetString(raw, "tradeHour")),
+		UnderlyingAsset: utils.GetString(raw, "underlyingSymbol"),
+		Expiration:      utils.GetTime(raw, "maturityDate"),
+		OptionType:      utils.GetString(raw, "optionType"),
+	}
 }

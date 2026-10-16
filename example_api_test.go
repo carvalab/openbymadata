@@ -24,6 +24,8 @@ func newExampleServer() *httptest.Server {
 			fmt.Fprint(w, `{"data":[{"symbol":"GGAL","settlementType":"2","bidPrice":5825,"offerPrice":5835,"settlementPrice":5830,"previousClosingPrice":5895}]}`)
 		case strings.HasSuffix(r.URL.Path, "market-time"):
 			fmt.Fprint(w, `{"isWorkingDay":true,"marketOpeningTime":"10:30:00","marketClosingTime":"17:00:00","timezone":"America/Argentina/Buenos_Aires"}`)
+		case strings.HasSuffix(r.URL.Path, "getBymaIndexsMep"):
+			fmt.Fprint(w, `{"data":[{"symbol":"IDXDOLARB","description":"IDXDOLARB","price":1537.13,"highValue":1539.88,"minValue":1532.46}]}`)
 		case strings.HasSuffix(r.URL.Path, "history"):
 			fmt.Fprint(w, `{"s":"ok","t":[1760313600,1760400000],"o":[5800,5860],"h":[5900,5925],"l":[5790,5810],"c":[5895,5825],"v":[180000,203162]}`)
 		default:
@@ -111,4 +113,23 @@ func ExampleClient_GetMarketTime() {
 
 	// Output:
 	// working day: true, 10:30:00 to 17:00:00
+}
+
+// ExampleClient_GetMEPIndices reads BYMA's MEP dollar index, the ARS/USD
+// rate implied by bond trading.
+func ExampleClient_GetMEPIndices() {
+	server := newExampleServer()
+	defer server.Close()
+
+	client := openbymadata.NewClient(&openbymadata.ClientOptions{BaseURL: server.URL})
+	defer client.Close()
+
+	mep, err := client.GetMEPIndices(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s: %.2f (range %.2f-%.2f)\n", mep[0].Symbol, mep[0].Last, mep[0].Low, mep[0].High)
+
+	// Output:
+	// IDXDOLARB: 1537.13 (range 1532.46-1539.88)
 }

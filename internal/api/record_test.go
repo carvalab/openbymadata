@@ -51,6 +51,24 @@ func TestRecordFixtures(t *testing.T) {
 		"company-info":   func() error { _, err := c.GetCompanyInfo(ctx, "ALUA"); return err },
 		"equity-profile": func() error { _, err := c.GetEquityProfile(ctx, "ALUA"); return err },
 		"management":     func() error { _, err := c.GetCompanyManagement(ctx, "ALUA"); return err },
+		"etfs":           func() error { _, err := c.GetETFs(ctx); return err },
+		"mep":            func() error { _, err := c.GetMEPIndices(ctx); return err },
+		"top-movers":     func() error { _, err := c.GetTopMovers(ctx); return err },
+		"bond-indices":   func() error { _, err := c.GetBondIndices(ctx); return err },
+		"green":          func() error { _, err := c.GetGreenBonds(ctx); return err },
+		"social":         func() error { _, err := c.GetSocialBonds(ctx); return err },
+		"sustainability": func() error { _, err := c.GetSustainabilityBonds(ctx); return err },
+		"linked":         func() error { _, err := c.GetLinkedBonds(ctx); return err },
+		"senebi-bonds":   func() error { _, err := c.GetSenebiBonds(ctx); return err },
+		"senebi-letters": func() error { _, err := c.GetSenebiLetters(ctx); return err },
+		"senebi-corp":    func() error { _, err := c.GetSenebiCorporateBonds(ctx); return err },
+		"coupons":        func() error { _, err := c.GetBondCoupons(ctx, "GD30"); return err },
+		"responsibles":   func() error { _, err := c.GetMarketResponsibles(ctx, "ALUA"); return err },
+		"search":         func() error { _, err := c.SearchInstruments(ctx, "GGAL"); return err },
+		"index-history": func() error {
+			_, err := c.GetIndexHistory(ctx, "M", ResolutionDaily, to.AddDate(0, 0, -30), to)
+			return err
+		},
 		"history": func() error {
 			_, err := c.GetHistory(ctx, "GGAL 24HS", ResolutionDaily, to.AddDate(0, 0, -30), to)
 			return err

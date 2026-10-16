@@ -139,3 +139,28 @@ func stringifyValue(v interface{}) string {
 		return strings.TrimSpace(strings.TrimPrefix(strings.TrimSuffix(fmt.Sprintf("%v", val), "}"), "{"))
 	}
 }
+
+// GetMarketResponsibles returns the company's designated market
+// representatives (responsables de relaciones con el mercado).
+func (c *Client) GetMarketResponsibles(ctx context.Context, symbol string) ([]MarketResponsible, error) {
+	respData, err := c.post(c.buildURL(pathResponsibles), symbolBody(symbol))
+	if err != nil {
+		return nil, err
+	}
+	var envelope struct {
+		Data []map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(respData, &envelope); err != nil {
+		return nil, fmt.Errorf("invalid responsibles response: %w", err)
+	}
+	out := make([]MarketResponsible, 0, len(envelope.Data))
+	for _, raw := range envelope.Data {
+		out = append(out, MarketResponsible{
+			Name:            strings.TrimSpace(utils.GetString(raw, "responsableMercado")),
+			Position:        strings.TrimSpace(utils.GetString(raw, "cargo")),
+			CompanyPosition: strings.TrimSpace(utils.GetString(raw, "cargoEmpresa")),
+			Since:           utils.GetTime(raw, "fechaDesignacion"),
+		})
+	}
+	return out, nil
+}

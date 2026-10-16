@@ -72,3 +72,8 @@ A red **Live API** badge means one of the two broke. Start from its log.
 - `bnown/bolsar/balances` redirects to an OAuth login (401).
 - Futures prices come per 1000 and the client scales them.
 - The free intraday endpoint returns delayed data only, a few bars a day.
+- Checked and skipped (2026-10-16): `bnown/analiticos/rentafija`,
+  `option-pricing` and `cauciones` return empty lists even with the web
+  app's request bodies; `relevant-facts`, `corporateevent/calendar`,
+  `financial-trusts`, `local-stocks-adrs` and `iamc/bonos` need a login.
+- `denominationCcy` can be `"EXT"` besides `"ARS"`; meaning unconfirmed.

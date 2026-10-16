@@ -35,14 +35,25 @@ func (c *Client) GetIntradayHistory(ctx context.Context, symbol string, resoluti
 	return c.fetchHistory(symbol, resolution, from, to)
 }
 
+// GetIndexHistory retrieves OHLCV bars for a market index, e.g. "M" for the
+// S&P Merval or "G" for the general index (see GetIndices for symbols).
+// Index volume is always 0.
+func (c *Client) GetIndexHistory(ctx context.Context, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	return c.fetchSeries(pathIndexHistory, symbol, resolution, from, to)
+}
+
 func (c *Client) fetchHistory(symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
+	return c.fetchSeries(pathHistorical, symbol, resolution, from, to)
+}
+
+func (c *Client) fetchSeries(endpoint, symbol string, resolution Resolution, from, to time.Time) (*OHLCV, error) {
 	params := url.Values{}
 	params.Set("symbol", symbol)
 	params.Set("resolution", string(resolution))
 	params.Set("from", strconv.FormatInt(from.Unix(), 10))
 	params.Set("to", strconv.FormatInt(to.Unix(), 10))
 
-	respData, err := c.get(c.buildURL(pathHistorical) + "?" + params.Encode())
+	respData, err := c.get(c.buildURL(endpoint) + "?" + params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history data: %w", err)
 	}

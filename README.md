@@ -4,7 +4,7 @@
 [![CI](https://github.com/carvalab/openbymadata/actions/workflows/go.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/go.yml)
 [![Live API](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml/badge.svg)](https://github.com/carvalab/openbymadata/actions/workflows/integration.yml)
 [![Coverage](https://codecov.io/gh/carvalab/openbymadata/branch/main/graph/badge.svg)](https://app.codecov.io/gh/carvalab/openbymadata)
-[![Release](https://img.shields.io/github/v/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
+[![Release](https://badgen.net/github/release/carvalab/openbymadata)](https://github.com/carvalab/openbymadata/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > 🇬🇧 **English:** Go client for the BYMA (Buenos Aires stock exchange) free market data API. [Read the English README →](README.en.md)
@@ -26,11 +26,11 @@ Te da acceso a datos del mercado financiero argentino con tipado fuerte, concurr
 - **Manejo Completo de Errores**: Tipos de errores personalizados con lógica de reintentos
 
 ### 📊 **Cobertura de Datos del Mercado**
-- **Acciones**: Líderes (blue chips), Panel general (galpones), CEDEARs  
-- **Renta Fija**: Bonos gubernamentales, bonos corporativos, letras de corto plazo
+- **Acciones**: Líderes (blue chips), Panel general (galpones), CEDEARs, ETFs
+- **Renta Fija**: Bonos gubernamentales y corporativos, letras, bonos verdes/sociales/sustentables, segmento SENEBI, índices de bonos, cronogramas de pago
 - **Derivados**: Contratos de opciones, futuros
 - **Datos Históricos**: Series temporales con OHLCV (Open, High, Low, Close, Volume) para gráficos
-- **Datos de Mercado**: Índices, resumen del mercado, estado de días hábiles
+- **Datos de Mercado**: Índices y su historia (Merval), dólar MEP, mayores subas y bajas, búsqueda de símbolos, resumen del mercado, estado de días hábiles
 - **Noticias y Financieros**: Noticias del mercado, estados de resultados
 
 > **Nota**: "Securities" es un término financiero genérico en nuestro código Go, pero los endpoints reales de la API de BYMA son: `leading-equity`, `general-equity`, y `cedears`
@@ -386,6 +386,19 @@ indices, err := client.GetIndices(ctx)
 
 // Conseguir resumen del mercado
 summary, err := client.MarketResume(ctx)
+
+// Dólar MEP
+mep, err := client.GetMEPIndices(ctx)
+fmt.Printf("%s %.2f\n", mep[0].Symbol, mep[0].Last)
+
+// Historia diaria del Merval ("M"; ver GetIndices para otros símbolos)
+merval, err := client.GetIndexHistory(ctx, "M", openbymadata.ResolutionDaily, from, to)
+
+// Mayores subas y bajas: acciones, bonos y opciones
+movers, err := client.GetTopMovers(ctx)
+
+// Buscar cualquier instrumento por símbolo o nombre (hasta 10 resultados)
+matches, err := client.SearchInstruments(ctx, "galicia")
 ```
 
 ### Acceso Basado en Colecciones (Endpoints de la API)
@@ -395,6 +408,7 @@ summary, err := client.MarketResume(ctx)
 bluechips, err := client.GetBluechips(ctx)  // → endpoint 'leading-equity'
 galpones, err := client.GetGalpones(ctx)    // → endpoint 'general-equity'  
 cedears, err := client.GetCedears(ctx)      // → endpoint 'cedears'
+etfs, err := client.GetETFs(ctx)            // → endpoint 'etf'
 ```
 
 ### Renta Fija
@@ -408,6 +422,24 @@ shortTermBonds, err := client.GetShortTermBonds(ctx)
 
 // Bonos corporativos
 corporateBonds, err := client.GetCorporateBonds(ctx)
+
+// Bonos temáticos
+green, err := client.GetGreenBonds(ctx)
+social, err := client.GetSocialBonds(ctx)
+sustainable, err := client.GetSustainabilityBonds(ctx)
+linked, err := client.GetLinkedBonds(ctx)
+
+// SENEBI: segmento bilateral sin contraparte central (símbolos terminan en ".SB")
+senebi, err := client.GetSenebiBonds(ctx)
+senebiLetters, err := client.GetSenebiLetters(ctx)
+senebiCorp, err := client.GetSenebiCorporateBonds(ctx)
+
+// Índices de renta fija y cronograma de pagos de un bono
+bondIndices, err := client.GetBondIndices(ctx)
+coupons, err := client.GetBondCoupons(ctx, "GD30")
+
+// Los bonos ahora traen Currency, Market y DaysToMaturity
+fmt.Println(bonds[0].Currency, bonds[0].Market, bonds[0].DaysToMaturity)
 ```
 
 ### Derivados

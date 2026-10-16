@@ -24,6 +24,21 @@ const (
 	pathHistorical      = "chart/historical-series/history"
 	pathNews            = "bnown/byma-ads"
 	pathBalances        = "bnown/seriesHistoricas/balances"
+	pathETF             = "etf"
+	pathMEP             = "getBymaIndexsMep"
+	pathTopMovers       = "main-ups-downs"
+	pathBondIndices     = "index-bonds"
+	pathGreenBonds      = "green-bond"
+	pathSocialBonds     = "social-bond"
+	pathSustainBonds    = "sustainability-bond"
+	pathLinkedBonds     = "linked-bond"
+	pathSenebiBonds     = "senebi-bonds"
+	pathSenebiLetters   = "senebi-letras"
+	pathSenebiCorpBonds = "senebi-obligaciones-negociables"
+	pathCoupons         = "bnown/seriesHistoricas/coupons"
+	pathResponsibles    = "bnown/fichatecnica/sociedades/responsables"
+	pathIndexHistory    = "chart/index-historical-series/history"
+	pathSearch          = "instruments-for-header-search"
 )
 
 // sectionHeader is the value BYMA expects in the "Options" request header
@@ -49,6 +64,21 @@ var sectionHeader = map[string]string{
 	pathCompanyMgmt:     "technical-details",
 	pathCompanyBalance:  "technical-details",
 	pathBalances:        "technical-details",
+	pathETF:             "renta-variable",
+	pathMEP:             "dashboard",
+	pathTopMovers:       "dashboard",
+	pathSearch:          "dashboard",
+	pathIndexHistory:    "renta-variable",
+	pathBondIndices:     "renta-fija",
+	pathGreenBonds:      "renta-fija",
+	pathSocialBonds:     "renta-fija",
+	pathSustainBonds:    "renta-fija",
+	pathLinkedBonds:     "renta-fija",
+	pathSenebiBonds:     "renta-fija",
+	pathSenebiLetters:   "renta-fija",
+	pathSenebiCorpBonds: "renta-fija",
+	pathCoupons:         "technical-details",
+	pathResponsibles:    "technical-details",
 }
 
 // Settlement identifies the settlement window used by BYMA quote endpoints.

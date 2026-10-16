@@ -68,18 +68,72 @@ func (c *Client) GetIndices(ctx context.Context) ([]Index, error) {
 
 	indices := make([]Index, 0, len(rawIndices))
 	for _, raw := range rawIndices {
-		indices = append(indices, Index{
-			Description:   utils.GetString(raw, "description"),
-			Symbol:        utils.GetString(raw, "symbol"),
-			Last:          utils.GetFloat64(raw, "price"),
-			Change:        utils.GetFloat64(raw, "variation"),
-			High:          utils.GetFloat64(raw, "highValue"),
-			Low:           utils.GetFloat64(raw, "minValue"),
-			PreviousClose: utils.GetFloat64(raw, "previousClosingPrice"),
-		})
+		indices = append(indices, parseIndex(raw))
 	}
 
 	return indices, nil
+}
+
+// GetMEPIndices retrieves BYMA's MEP dollar indices (IDXDOLARB and
+// related), the implied ARS/USD rate from bond trading.
+func (c *Client) GetMEPIndices(ctx context.Context) ([]Index, error) {
+	respData, err := c.post(c.buildURL(pathMEP), []byte(`{"Content-Type":"application/json"}`))
+	if err != nil {
+		return nil, err
+	}
+	var raws []map[string]interface{}
+	if err := c.parseAPIResponse(respData, &raws); err != nil {
+		return nil, err
+	}
+	out := make([]Index, 0, len(raws))
+	for _, raw := range raws {
+		out = append(out, parseIndex(raw))
+	}
+	return out, nil
+}
+
+func parseIndex(raw map[string]interface{}) Index {
+	return Index{
+		Description:   utils.GetString(raw, "description"),
+		Symbol:        utils.GetString(raw, "symbol"),
+		Last:          utils.GetFloat64(raw, "price"),
+		Change:        utils.GetFloat64(raw, "variation"),
+		High:          utils.GetFloat64(raw, "highValue"),
+		Low:           utils.GetFloat64(raw, "minValue"),
+		PreviousClose: utils.GetFloat64(raw, "previousClosingPrice"),
+	}
+}
+
+// GetTopMovers retrieves the stocks, government bonds and options from
+// BYMA's "main ups and downs" panel.
+func (c *Client) GetTopMovers(ctx context.Context) (*TopMovers, error) {
+	respData, err := c.post(c.buildURL(pathTopMovers), []byte(`{"Content-Type":"application/json"}`))
+	if err != nil {
+		return nil, err
+	}
+	var raw struct {
+		Stocks  []map[string]interface{} `json:"actions"`
+		Bonds   []map[string]interface{} `json:"public-bonds"`
+		Options []map[string]interface{} `json:"options"`
+	}
+	if err := json.Unmarshal(respData, &raw); err != nil {
+		return nil, fmt.Errorf("invalid top movers response: %w", err)
+	}
+	out := &TopMovers{
+		Stocks:  make([]Security, 0, len(raw.Stocks)),
+		Bonds:   make([]Bond, 0, len(raw.Bonds)),
+		Options: make([]Option, 0, len(raw.Options)),
+	}
+	for _, r := range raw.Stocks {
+		out.Stocks = append(out.Stocks, parseSecurity(r))
+	}
+	for _, r := range raw.Bonds {
+		out.Bonds = append(out.Bonds, parseBond(r))
+	}
+	for _, r := range raw.Options {
+		out.Options = append(out.Options, parseOption(r))
+	}
+	return out, nil
 }
 
 // MarketResume retrieves market summary data

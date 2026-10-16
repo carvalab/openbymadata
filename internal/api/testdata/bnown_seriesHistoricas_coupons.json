@@ -1,0 +1,48 @@
+{
+ "content": {
+  "page_count": 1,
+  "page_number": 1,
+  "page_size": 50,
+  "total_elements_count": 11
+ },
+ "data": [
+  {
+   "archivo": 495839,
+   "couponsAvisoPago": "https://www.bolsar.com/Downloads.aspx?Id=495839",
+   "couponsFechaAvisoPago": "2026-07-01 00:00:00.0",
+   "couponsFechaPagoAmort": "2026-07-09 00:00:00.0",
+   "couponsFechaPagoRenta": "2026-07-09 00:00:00.0",
+   "couponsNumServAmort": 5,
+   "couponsNumServRenta": 11,
+   "couponsPorcAmort": 8,
+   "couponsPorcValResVig": 64,
+   "tipoArchivo": "pdf"
+  },
+  {
+   "archivo": 484208,
+   "couponsAvisoPago": "https://www.bolsar.com/Downloads.aspx?Id=484208",
+   "couponsFechaAvisoPago": "2026-01-02 00:00:00.0",
+   "couponsFechaPagoAmort": "2026-01-09 00:00:00.0",
+   "couponsFechaPagoRenta": "2026-01-09 00:00:00.0",
+   "couponsNumServAmort": 4,
+   "couponsNumServRenta": 10,
+   "couponsPorcAmort": 8,
+   "couponsPorcValResVig": 72,
+   "tipoArchivo": "pdf"
+  },
+  {
+   "archivo": 473639,
+   "couponsAvisoPago": "https://www.bolsar.com/Downloads.aspx?Id=473639",
+   "couponsFechaAvisoPago": "2025-06-30 00:00:00.0",
+   "couponsFechaPagoAmort": "2025-07-09 00:00:00.0",
+   "couponsFechaPagoRenta": "2025-07-09 00:00:00.0",
+   "couponsNumServAmort": 3,
+   "couponsNumServRenta": 9,
+   "couponsPorcAmort": 8,
+   "couponsPorcValResVig": 80,
+   "tipoArchivo": "pdf"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}
