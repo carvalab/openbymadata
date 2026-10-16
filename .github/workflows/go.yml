@@ -11,6 +11,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Codecov OIDC upload
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -43,6 +46,14 @@ jobs:
           total=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
           echo "Total coverage: ${total}%" | tee -a "$GITHUB_STEP_SUMMARY"
           awk -v t="$total" 'BEGIN { exit (t < 80) }' || { echo "Coverage below 80%"; exit 1; }
+
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v7
+        with:
+          files: coverage.out
+          use_oidc: true
+          fail_ci_if_error: false
 
       - name: Vulnerability check
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
