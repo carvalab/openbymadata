@@ -1,0 +1,36 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 19,
+  "page_size": 19,
+  "total_elements_count": 19
+ },
+ "data": [
+  {
+   "simbolo": "GOBN",
+   "fecha": "2026-10-16 09:57:00.0",
+   "tipoArchivo": "pdf",
+   "descarga": 502125,
+   "referencia": "Adecuación de montos listados",
+   "emisor": "Gobierno Nacional"
+  },
+  {
+   "simbolo": "GOBN",
+   "fecha": "2026-10-16 09:57:00.0",
+   "tipoArchivo": "pdf",
+   "descarga": 502125,
+   "referencia": "Adecuación de montos listados",
+   "emisor": "Gobierno Nacional"
+  },
+  {
+   "simbolo": "GOBN",
+   "fecha": "2026-10-16 09:57:00.0",
+   "tipoArchivo": "pdf",
+   "descarga": 502125,
+   "referencia": "Adecuación de montos listados",
+   "emisor": "Gobierno Nacional"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

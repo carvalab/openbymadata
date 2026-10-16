@@ -41,20 +41,28 @@ func (c *Client) GetCompanyManagement(ctx context.Context, symbol string) ([]Com
 		return nil, err
 	}
 	var envelope struct {
-		Data []CompanyDirector `json:"data"`
+		Data []map[string]interface{} `json:"data"`
 	}
 	if err := json.Unmarshal(respData, &envelope); err != nil {
 		return nil, fmt.Errorf("invalid management response: %w", err)
 	}
-	if envelope.Data == nil {
-		return []CompanyDirector{}, nil
+	directors := make([]CompanyDirector, 0, len(envelope.Data))
+	for _, raw := range envelope.Data {
+		// BYMA sends the name as "persona" and pads "cargo" with spaces.
+		directors = append(directors, CompanyDirector{
+			Name:     strings.TrimSpace(firstNonEmpty(utils.GetString(raw, "persona"), utils.GetString(raw, "nombre"))),
+			Position: strings.TrimSpace(utils.GetString(raw, "cargo")),
+			Since:    strings.TrimSpace(utils.GetString(raw, "desde")),
+			Until:    strings.TrimSpace(utils.GetString(raw, "hasta")),
+			Type:     strings.TrimSpace(utils.GetString(raw, "tipo")),
+		})
 	}
-	return envelope.Data, nil
+	return directors, nil
 }
 
 // GetCompanyBalance returns the latest balance sheet for the symbol.
-// The endpoint may redirect to an internal BYMA host unreachable from
-// some networks; in that case a typed error is returned.
+// Since 2026 BYMA redirects this endpoint to an OAuth login, so it fails
+// on the free API. Use GetIncomeStatement for the filed statement PDFs.
 func (c *Client) GetCompanyBalance(ctx context.Context, symbol string) ([]CompanyBalance, error) {
 	respData, err := c.post(c.buildURL(pathCompanyBalance), []byte(fmt.Sprintf(`{"symbol":%q,"Content-Type":"application/json"}`, symbol)))
 	if err != nil {

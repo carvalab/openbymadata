@@ -148,7 +148,7 @@ type ClientOptions struct {
 	Timeout       time.Duration
 	RetryAttempts int
 	Logger        Logger
-	EnableCache   bool // Enable 5-minute caching (default: true)
+	EnableCache   bool // Enable 5-minute caching. On with NewClient() or DefaultClientOptions(); set it explicitly when passing your own options.
 }
 
 // DefaultClientOptions returns default client options
@@ -165,15 +165,24 @@ func DefaultClientOptions() *ClientOptions {
 // NoOpLogger is a no-operation logger implementation
 type NoOpLogger struct{}
 
+// Debug discards the message.
 func (l *NoOpLogger) Debug(msg string, fields ...LogField) {}
-func (l *NoOpLogger) Info(msg string, fields ...LogField)  {}
-func (l *NoOpLogger) Warn(msg string, fields ...LogField)  {}
+
+// Info discards the message.
+func (l *NoOpLogger) Info(msg string, fields ...LogField) {}
+
+// Warn discards the message.
+func (l *NoOpLogger) Warn(msg string, fields ...LogField) {}
+
+// Error discards the message.
 func (l *NoOpLogger) Error(msg string, fields ...LogField) {}
 
 // =============================================================================
 // Error Types
 // =============================================================================
 
+// Template errors. MapHTTPError and the With* helpers return copies, so
+// compare by Code (errors.As into *BYMAError) rather than with errors.Is.
 var (
 	ErrInvalidResponse = &BYMAError{Code: "INVALID_RESPONSE", Message: "Invalid API response"}
 	ErrAPIUnavailable  = &BYMAError{Code: "API_UNAVAILABLE", Message: "BYMA API is unavailable"}
@@ -184,6 +193,8 @@ var (
 	ErrInternalError   = &BYMAError{Code: "INTERNAL_ERROR", Message: "Internal server error"}
 )
 
+// BYMAError is a typed error with a stable Code (for example "TIMEOUT"),
+// an optional HTTP status and the underlying cause.
 type BYMAError struct {
 	Code       string `json:"code"`
 	Message    string `json:"message"`
@@ -191,6 +202,7 @@ type BYMAError struct {
 	Underlying error  `json:"-"`
 }
 
+// Error formats the code, message and underlying cause.
 func (e *BYMAError) Error() string {
 	if e.Underlying != nil {
 		return fmt.Sprintf("%s: %s (underlying: %v)", e.Code, e.Message, e.Underlying)
@@ -198,22 +210,28 @@ func (e *BYMAError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
+// Unwrap returns the underlying cause so errors.Is and errors.As work.
 func (e *BYMAError) Unwrap() error {
 	return e.Underlying
 }
 
+// WithUnderlying returns a copy of e wrapping err.
 func (e *BYMAError) WithUnderlying(err error) *BYMAError {
 	return &BYMAError{Code: e.Code, Message: e.Message, StatusCode: e.StatusCode, Underlying: err}
 }
 
+// WithStatusCode returns a copy of e carrying the HTTP status code.
 func (e *BYMAError) WithStatusCode(code int) *BYMAError {
 	return &BYMAError{Code: e.Code, Message: e.Message, StatusCode: code, Underlying: e.Underlying}
 }
 
+// NewBYMAError creates a BYMAError with the given code and message.
 func NewBYMAError(code, message string) *BYMAError {
 	return &BYMAError{Code: code, Message: message}
 }
 
+// MapHTTPError converts an HTTP status code to the matching BYMAError,
+// falling back to an "HTTP_ERROR" code for statuses without one.
 func MapHTTPError(statusCode int) *BYMAError {
 	switch statusCode {
 	case http.StatusUnauthorized:
@@ -229,6 +247,8 @@ func MapHTTPError(statusCode int) *BYMAError {
 	}
 }
 
+// IsRetryable reports whether err is worth retrying. Invalid responses,
+// unknown tickers, auth failures and plain HTTP errors are not.
 func IsRetryable(err error) bool {
 	if err == nil {
 		return false

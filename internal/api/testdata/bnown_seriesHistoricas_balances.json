@@ -1,0 +1,19 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 3,
+  "page_size": 50,
+  "total_elements_count": 107
+ },
+ "data": [
+  {
+   "archivo": 500007,
+   "balancesFechaEstadoContable": "2026-06-30 00:00:00.0",
+   "tipoArchivo": "pdf",
+   "balancesFechaPresentacion": "2026-09-08 00:00:00.0",
+   "balancesArchivo": "https://www.bolsar.com/Downloads.aspx?Id=500007"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

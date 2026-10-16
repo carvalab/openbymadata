@@ -1,0 +1,48 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 50,
+  "total_elements_count": 16
+ },
+ "data": [
+  {
+   "date": "2026-10-16",
+   "symbol": "G",
+   "country": "Argentina",
+   "isRate": false,
+   "minValue": 123855846.04,
+   "highValue": 125223356.85,
+   "price": 124242712.18,
+   "description": "S&P BYMA Indice General",
+   "previousClosingPrice": 124048018.53,
+   "variation": 0.0016
+  },
+  {
+   "date": "2026-10-16",
+   "symbol": "M",
+   "country": "Argentina",
+   "isRate": false,
+   "minValue": 2847942.33,
+   "highValue": 2880639.69,
+   "price": 2850585.58,
+   "description": "S&P MERVAL",
+   "previousClosingPrice": 2859051.19,
+   "variation": -0.003
+  },
+  {
+   "date": "2026-10-16",
+   "symbol": "SPBYCAP",
+   "country": "Argentina",
+   "isRate": false,
+   "minValue": 41065.15,
+   "highValue": 41716.57,
+   "price": 41345.61,
+   "description": "S&P BYMA Construccion",
+   "previousClosingPrice": 41216.42,
+   "variation": 0.0031
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

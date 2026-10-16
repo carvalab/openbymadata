@@ -1,0 +1,30 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 50,
+  "total_elements_count": 15
+ },
+ "data": [
+  {
+   "market": "BYMATN",
+   "settlementType": "1",
+   "volumeAmount": 11325569533965.3,
+   "symbol": "Total Negociado BYMA"
+  },
+  {
+   "market": "BYMATN",
+   "settlementType": "1",
+   "volumeAmount": 7739447116077.06,
+   "symbol": "PPT"
+  },
+  {
+   "market": "BYMATN",
+   "settlementType": "1",
+   "volumeAmount": 168714165215.37,
+   "symbol": "Total Renta Variable"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}

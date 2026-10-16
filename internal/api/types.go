@@ -120,13 +120,17 @@ type News struct {
 	Descarga    string    `json:"descarga"`
 }
 
-// IncomeStatement represents financial statement data
+// IncomeStatement is one filed financial statement. FechaCierre is the
+// period end date and FechaPresentacion the filing date (both YYYY-MM-DD);
+// BalancesArchivo links to the PDF. BYMA no longer sends Periodo or
+// TipoPeriodo, so those are usually empty.
 type IncomeStatement struct {
-	Symbol          string `json:"symbol"`
-	Periodo         string `json:"periodo"`
-	TipoPeriodo     string `json:"tipoPeriodo"`
-	FechaCierre     string `json:"fechaCierre"`
-	BalancesArchivo string `json:"balancesArchivo"`
+	Symbol            string `json:"symbol"`
+	Periodo           string `json:"periodo"`
+	TipoPeriodo       string `json:"tipoPeriodo"`
+	FechaCierre       string `json:"fechaCierre"`
+	FechaPresentacion string `json:"fechaPresentacion"`
+	BalancesArchivo   string `json:"balancesArchivo"`
 }
 
 // MarketTimeResponse represents the market time API response
@@ -137,8 +141,8 @@ type MarketTimeResponse struct {
 	Timezone          string `json:"timezone"`
 }
 
-// MarketTime exposes the parsed market-time response, with the opening
-// and closing instants derived from the textual fields when present.
+// MarketTime exposes the parsed market-time response. Opens and Closes are
+// today's opening and closing instants in the market's timezone (UTC-3).
 type MarketTime struct {
 	IsWorkingDay bool
 	Opens        time.Time

@@ -1,0 +1,24 @@
+{
+ "content": {
+  "page_number": 1,
+  "page_count": 1,
+  "page_size": 50,
+  "total_elements_count": 32
+ },
+ "data": [
+  {
+   "cargo": "Presidente                    ",
+   "persona": "LEVINAS MARTIN JOSE"
+  },
+  {
+   "cargo": "Vicepresidente                ",
+   "persona": "MERENER FEDERICO"
+  },
+  {
+   "cargo": "Director Titular              ",
+   "persona": "MARTINEZ COSTA ALBERTO EDUARDO"
+  }
+ ],
+ "empty": false,
+ "upgrade": false
+}
